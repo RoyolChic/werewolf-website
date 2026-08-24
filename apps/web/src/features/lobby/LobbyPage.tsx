@@ -8,7 +8,7 @@ import {
   type PublicRoomState,
   type WitchSelfSaveRule,
 } from "@kill-wolf/shared";
-import { getSocket } from "../../lib/socketClient";
+import { useSocket } from "../../lib/socketContext";
 import { PlayerList } from "../../components/PlayerList";
 import { Button } from "../../components/Button";
 import { ShareRoomPanel } from "./ShareRoomPanel";
@@ -22,7 +22,7 @@ interface LobbyPageProps {
 export function LobbyPage({ publicState, selfPlayerId, isHost }: LobbyPageProps) {
   const [maxPlayers, setMaxPlayers] = useState(publicState.maxPlayers);
   const roomId = publicState.roomId;
-  const socket = getSocket();
+  const socket = useSocket();
 
   const roomFull = publicState.players.length === publicState.maxPlayers;
 

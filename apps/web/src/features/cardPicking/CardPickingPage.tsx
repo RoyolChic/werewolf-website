@@ -1,5 +1,5 @@
 import { CLIENT_EVENTS, type PrivatePlayerState, type PublicRoomState } from "@kill-wolf/shared";
-import { getSocket } from "../../lib/socketClient";
+import { useSocket } from "../../lib/socketContext";
 import { Button } from "../../components/Button";
 import { RoleBadge } from "../../components/RoleBadge";
 import { CardGrid } from "./CardGrid";
@@ -12,7 +12,7 @@ interface CardPickingPageProps {
 
 export function CardPickingPage({ publicState, privateState, selfPlayerId }: CardPickingPageProps) {
   const roomId = publicState.roomId;
-  const socket = getSocket();
+  const socket = useSocket();
   const self = publicState.players.find((p) => p.playerId === selfPlayerId);
   const hasConfirmed = self?.hasPickedCard ?? false;
 

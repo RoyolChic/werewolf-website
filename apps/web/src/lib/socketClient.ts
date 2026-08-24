@@ -10,3 +10,11 @@ export function getSocket(): Socket {
   }
   return socket;
 }
+
+/**
+ * Opens a brand-new, independent connection (its own socket.id) instead of reusing the shared
+ * singleton. Used by the dev multi-view tool to simulate several distinct players in one tab.
+ */
+export function createIsolatedSocket(): Socket {
+  return io(SERVER_URL, { forceNew: true, autoConnect: true });
+}

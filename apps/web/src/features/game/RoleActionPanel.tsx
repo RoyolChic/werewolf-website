@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CLIENT_EVENTS, FACTION_LABELS, type PrivatePlayerState, type PublicRoomState } from "@kill-wolf/shared";
-import { getSocket } from "../../lib/socketClient";
+import { useSocket } from "../../lib/socketContext";
 import { Button } from "../../components/Button";
 
 interface RoleActionPanelProps {
@@ -15,7 +15,7 @@ function alivePlayersExcept(publicState: PublicRoomState, excludeId?: string) {
 
 export function RoleActionPanel({ publicState, privateState, selfPlayerId }: RoleActionPanelProps) {
   const roomId = publicState.roomId;
-  const socket = getSocket();
+  const socket = useSocket();
   const self = publicState.players.find((p) => p.playerId === selfPlayerId);
   const [poisonTarget, setPoisonTarget] = useState<string>("");
 
@@ -176,7 +176,7 @@ function DeadPlayerPanel({
   privateState: PrivatePlayerState;
   roomId: string;
 }) {
-  const socket = getSocket();
+  const socket = useSocket();
   return (
     <section className="card">
       <p>你已死亡</p>

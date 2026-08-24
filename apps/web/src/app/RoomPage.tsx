@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useRoomConnection } from "../hooks/useRoomConnection";
-import { LobbyPage } from "../features/lobby/LobbyPage";
-import { CardPickingPage } from "../features/cardPicking/CardPickingPage";
-import { GamePage } from "../features/game/GamePage";
-import { GameOverPage } from "../features/result/GameOverPage";
 import { Button } from "../components/Button";
+import { PhaseView } from "./PhaseView";
 
 export function RoomPage() {
   const { roomId = "" } = useParams<{ roomId: string }>();
@@ -74,24 +71,10 @@ export function RoomPage() {
     return <div className="page centered">載入房間狀態中...</div>;
   }
 
-  const isHost = publicState.hostPlayerId === selfPlayerId;
-
   return (
     <div className="page room-page">
       {lastActionError && <div className="toast">{lastActionError}</div>}
-      {publicState.phase === "LOBBY" && (
-        <LobbyPage publicState={publicState} selfPlayerId={selfPlayerId} isHost={isHost} />
-      )}
-      {(publicState.phase === "CARD_PICKING" || publicState.phase === "ROLE_REVEAL") && (
-        <CardPickingPage publicState={publicState} privateState={privateState} selfPlayerId={selfPlayerId} />
-      )}
-      {publicState.phase !== "LOBBY" &&
-        publicState.phase !== "CARD_PICKING" &&
-        publicState.phase !== "ROLE_REVEAL" &&
-        publicState.phase !== "GAME_OVER" && (
-          <GamePage publicState={publicState} privateState={privateState} selfPlayerId={selfPlayerId} />
-        )}
-      {publicState.phase === "GAME_OVER" && <GameOverPage publicState={publicState} />}
+      <PhaseView publicState={publicState} privateState={privateState} selfPlayerId={selfPlayerId} />
     </div>
   );
 }
