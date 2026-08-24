@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearAllRoomsForTest } from "../src/rooms/roomStore";
 import { werewolfVote } from "../src/game/engine";
+import { buildPrivateState } from "../src/game/privateState";
 import { playersWithRole, setupNightReadyRoom } from "./helpers";
 
 beforeEach(() => {
@@ -50,6 +51,33 @@ describe("werewolf night phase", () => {
     expect(room.gameState.phase).toBe("NIGHT_SEER");
     expect(room.gameState.nightKillTargetPlayerId).not.toBeNull();
     expect(wolves).toContain(room.gameState.nightKillTargetPlayerId);
+  });
+
+  it("lets werewolves see each other's live votes but hides them from non-werewolves", () => {
+    const { room, playerIds } = setupNightReadyRoom(8);
+    const wolves = playersWithRole(room, "WEREWOLF");
+    const villager = playerIds.find((id) => !wolves.includes(id))!;
+
+    werewolfVote(room, wolves[0], villager);
+
+    const firstWolfView = buildPrivateState(room, wolves[0])!;
+    expect(firstWolfView.werewolfVotes).toEqual({ [wolves[0]]: villager });
+
+    const secondWolfView = buildPrivateState(room, wolves[1])!;
+    expect(secondWolfView.werewolfVotes).toEqual({ [wolves[0]]: villager });
+
+    const villagerView = buildPrivateState(room, villager)!;
+    expect(villagerView.werewolfVotes).toBeNull();
+  });
+
+  it("stops exposing werewolf votes once the phase has moved past NIGHT_WEREWOLF", () => {
+    const { room } = setupNightReadyRoom(6);
+    const wolves = playersWithRole(room, "WEREWOLF");
+    wolves.forEach((wolfId, index) => werewolfVote(room, wolfId, wolves[(index + 1) % wolves.length]));
+
+    expect(room.gameState.phase).toBe("NIGHT_SEER");
+    const view = buildPrivateState(room, wolves[0])!;
+    expect(view.werewolfVotes).toBeNull();
   });
 
   it("resolves a tie by picking one of the tied candidates at random", () => {

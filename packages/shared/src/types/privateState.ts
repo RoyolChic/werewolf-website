@@ -31,6 +31,8 @@ export interface PrivatePlayerState {
   playerId: string;
   role: Role | null;
   werewolfAllyPlayerIds: string[] | null;
+  /** Live NIGHT_WEREWOLF tally: voterPlayerId -> targetPlayerId. Only populated for werewolves. */
+  werewolfVotes: Record<string, string> | null;
   seerChecks: SeerCheckRecord[] | null;
   witch: WitchPrivateInfo | null;
   deadViewMode: DeadViewMode;

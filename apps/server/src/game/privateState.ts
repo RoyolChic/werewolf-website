@@ -51,6 +51,11 @@ export function buildPrivateState(room: Room, playerId: string): PrivatePlayerSt
           .map((p) => p.playerId)
       : null;
 
+  const werewolfVotes =
+    player.role === "WEREWOLF" && gameState.phase === "NIGHT_WEREWOLF"
+      ? Object.fromEntries(gameState.werewolfVotes)
+      : null;
+
   const seerChecks =
     player.role === "SEER"
       ? gameState.seerChecks
@@ -71,6 +76,7 @@ export function buildPrivateState(room: Room, playerId: string): PrivatePlayerSt
     playerId: player.playerId,
     role: player.role,
     werewolfAllyPlayerIds,
+    werewolfVotes,
     seerChecks,
     witch,
     deadViewMode: player.deadViewMode,
