@@ -38,6 +38,12 @@ npm run dev:server   # 只啟動後端（http://localhost:3000）
 
 - `VITE_SERVER_URL`（預設 `http://localhost:3000`）
 
+## 開發測試工具
+
+`npm run dev:web` 啟動後，開發環境下可以開 http://localhost:5173/dev 使用內建的多玩家測試頁：一鍵建立測試房、一鍵補滿假玩家，並可在同一頁的分頁列切換不同玩家視角（每個模擬玩家都是獨立的 Socket.IO 連線，用真正的畫面元件渲染，不是另外做的簡化版）。不需要再手動開多個無痕視窗測試——而且無痕視窗本來就會共用 localStorage，同一瀏覽器開多個無痕視窗實際上會被當成同一個玩家。
+
+這個頁面只存在於開發模式：路由是用 `import.meta.env.DEV` 在 build 階段擋掉再搭配動態 import，`npm run build` 產出的正式版完全不含這個頁面的程式碼（已用 `grep` 驗證過 dist 內容）。
+
 ## 檢查與測試
 
 ```bash
@@ -62,12 +68,11 @@ npm run build        # 建置前端（後端目前以 tsx 直接執行，見下�
 - ✅ Phase 6：選牌與角色揭示
 - ✅ Phase 7：後端遊戲引擎（狀態機、狼人/預言家/女巫、投票、勝負判定）
 - ✅ Phase 8：遊戲頁整合（可完整跑完一局）
-- ⏳ Phase 9：開發測試工具（尚未開始）
+- ✅ Phase 9：開發測試工具（`DevMultiViewPage`，見上方「開發測試工具」）
 - ⏳ Phase 10：打磨、錯誤處理與部署準備（尚未開始）
 
 ## 已知簡化與待補項目
 
 - `NIGHT_START`／`DAY_ANNOUNCEMENT`／`DAY_EXILE_RESULT` 之間的短暫轉場延遲（1.2～3 秒）目前不會因玩家斷線而暫停；只有 `DAY_DISCUSSION` 倒數與所有需要玩家操作才能推進的階段會確實暫停。
-- 尚未提供開發用多視角測試頁（`DevMultiViewPage`）。
 - 尚未加入完整的前端錯誤提示、loading/disabled 細節打磨。
 - `apps/server` 的 `build` script 目前只做 typecheck，尚未提供正式部署用的編譯產物。
