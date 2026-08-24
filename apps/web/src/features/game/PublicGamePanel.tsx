@@ -9,7 +9,7 @@ export function PublicGamePanel({ publicState, selfPlayerId }: { publicState: Pu
       <PhaseBanner phase={publicState.phase} dayNumber={publicState.dayNumber} nightNumber={publicState.nightNumber} />
       {publicState.isPaused && <p className="paused-banner">有玩家離線，遊戲暫停中...</p>}
       {publicState.phase === "DAY_DISCUSSION" && (
-        <Countdown secondsRemaining={publicState.discussionSecondsRemaining} />
+        <Countdown endsAt={publicState.discussionEndsAt} fallbackSeconds={publicState.discussionSecondsRemaining} />
       )}
       {publicState.phase === "DAY_ANNOUNCEMENT" && (
         <p>

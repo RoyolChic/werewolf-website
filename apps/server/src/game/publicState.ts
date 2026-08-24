@@ -50,6 +50,14 @@ function computeDiscussionSecondsRemaining(room: Room): number | null {
   return Math.max(0, Math.ceil((gameState.discussionEndsAt - Date.now()) / 1000));
 }
 
+function computeDiscussionEndsAt(room: Room): number | null {
+  const { gameState } = room;
+  if (gameState.phase !== "DAY_DISCUSSION") {
+    return null;
+  }
+  return gameState.discussionEndsAt;
+}
+
 export function buildPublicRoomState(room: Room): PublicRoomState {
   const disconnectedPlayerIds = [...room.players.values()]
     .filter((p) => !p.isConnected)
@@ -82,6 +90,7 @@ export function buildPublicRoomState(room: Room): PublicRoomState {
     dayNumber: room.gameState.dayNumber,
     nightNumber: room.gameState.nightNumber,
     discussionSecondsRemaining: computeDiscussionSecondsRemaining(room),
+    discussionEndsAt: computeDiscussionEndsAt(room),
     discussionSkipRequesterIds: [...room.gameState.discussionSkipRequesterIds],
     lastNightDeathPlayerIds: room.gameState.lastNightDeathPlayerIds,
     exileResult: room.gameState.exileResult,
