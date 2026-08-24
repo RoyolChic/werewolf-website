@@ -1,0 +1,16 @@
+export const ROOM_ID_LENGTH = 7;
+export const ROOM_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+export const MIN_PLAYERS = 6;
+export const MAX_PLAYERS = 12;
+
+export const DAY_DISCUSSION_SECONDS_MIN = 60;
+export const DAY_DISCUSSION_SECONDS_MAX = 180;
+export const DAY_DISCUSSION_SECONDS_DEFAULT = 120;
+
+export const PLAYER_NAME_MIN_LENGTH = 1;
+export const PLAYER_NAME_MAX_LENGTH = 16;
+
+export const GAME_OVER_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+export const ACTIVE_ROOM_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
+export const IDLE_SWEEP_INTERVAL_MS = 60 * 1000;
