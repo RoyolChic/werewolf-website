@@ -33,6 +33,26 @@ describe("reconnect", () => {
     }
   });
 
+  it("lets a valid token supersede a stale connection that the server hasn't marked offline yet", () => {
+    // Simulates a page refresh / duplicate tab race: the old socket is still marked connected
+    // server-side when the new socket presents a still-valid token for the same identity.
+    const { room, playerIds } = createTestRoom(6);
+    const player = room.players.get(playerIds[1])!;
+    const originalToken = player.reconnectToken!;
+    const oldSocketId = player.socketId!;
+    expect(player.isConnected).toBe(true);
+
+    const result = joinRoom({ roomId: room.roomId, name: player.name, reconnectToken: originalToken, socketId: "new-socket" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.player.playerId).toBe(playerIds[1]);
+      expect(result.player.socketId).toBe("new-socket");
+      expect(result.player.isConnected).toBe(true);
+      expect(result.supersededSocketId).toBe(oldSocketId);
+    }
+  });
+
   it("falls back to the name-confirmation flow when the token is missing or stale", () => {
     const { room, playerIds } = createTestRoom(6);
     const player = room.players.get(playerIds[1])!;

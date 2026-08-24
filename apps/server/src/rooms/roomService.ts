@@ -93,6 +93,8 @@ export type JoinRoomSuccess = {
   kind: "NEW" | "RECONNECTED";
   room: Room;
   player: Player;
+  /** Set when a reconnect superseded a still-registered old socket (e.g. a stale tab/refresh race). */
+  supersededSocketId?: string;
 };
 
 export type JoinRoomNeedsConfirm = {
@@ -121,17 +123,25 @@ export function joinRoom(input: JoinRoomInput): JoinRoomSuccess | JoinRoomNeedsC
   const name = nameResult.normalizedName;
 
   if (input.reconnectToken) {
-    const offlinePlayer = [...room.players.values()].find(
-      (p) => p.reconnectToken === input.reconnectToken && !p.isConnected,
-    );
-    if (offlinePlayer) {
-      offlinePlayer.isConnected = true;
-      offlinePlayer.socketId = input.socketId;
-      offlinePlayer.reconnectToken = createToken();
+    // A valid, not-yet-consumed token proves identity on its own -- it must win even if the
+    // player's old connection is still marked connected server-side. That state can be stale:
+    // the browser reloaded (a new socket arrives before the server notices the old one drop) or
+    // a second tab in the same profile is resuming the identity a first tab still holds. Either
+    // way the new socket takes over and the old one (if any) gets forcibly disconnected below.
+    const matchedPlayer = [...room.players.values()].find((p) => p.reconnectToken === input.reconnectToken);
+    if (matchedPlayer) {
+      const supersededSocketId =
+        matchedPlayer.isConnected && matchedPlayer.socketId && matchedPlayer.socketId !== input.socketId
+          ? matchedPlayer.socketId
+          : undefined;
+
+      matchedPlayer.isConnected = true;
+      matchedPlayer.socketId = input.socketId;
+      matchedPlayer.reconnectToken = createToken();
       if (allAlivePlayersConnected(room)) {
         resumeDiscussionTimerIfPaused(room);
       }
-      return { ok: true, kind: "RECONNECTED", room, player: offlinePlayer };
+      return { ok: true, kind: "RECONNECTED", room, player: matchedPlayer, supersededSocketId };
     }
   }
 

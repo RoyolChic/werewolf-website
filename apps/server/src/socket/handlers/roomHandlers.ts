@@ -15,7 +15,7 @@ import {
   type StartCardPickingPayload,
 } from "@kill-wolf/shared";
 import { emitError, withRoomAndPlayer } from "../helpers";
-import { bindSocketToPlayer } from "../socketSession";
+import { bindSocketToPlayer, unbindSocket } from "../socketSession";
 import { broadcastRoom } from "../../rooms/roomBroadcast";
 import { touchRoom } from "../../rooms/roomStore";
 import * as roomService from "../../rooms/roomService";
@@ -83,6 +83,11 @@ export function registerRoomHandlers(io: Server, socket: Socket): void {
       }
       emitError(socket, result.code, result.message);
       return;
+    }
+
+    if (result.supersededSocketId) {
+      unbindSocket(result.supersededSocketId);
+      io.sockets.sockets.get(result.supersededSocketId)?.disconnect(true);
     }
 
     socket.join(result.room.roomId);
