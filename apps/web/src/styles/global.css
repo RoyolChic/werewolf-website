@@ -1,0 +1,359 @@
+:root {
+  --color-bg: #14151f;
+  --color-surface: #1f2130;
+  --color-surface-alt: #2a2d40;
+  --color-border: #3a3d52;
+  --color-text: #e8e8f0;
+  --color-text-muted: #9a9cb0;
+  --color-primary: #6a5cff;
+  --color-danger: #ff5c6a;
+  --color-success: #4ade80;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.centered {
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.field input,
+.field select {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--color-text);
+  font-size: 16px;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-small {
+  padding: 8px 12px;
+  font-size: 14px;
+  min-height: 36px;
+}
+
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--color-surface-alt);
+  border-radius: 8px;
+}
+
+.player-row-dead {
+  opacity: 0.5;
+}
+
+.player-name {
+  font-weight: 600;
+  margin-right: auto;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.badge-host {
+  background: var(--color-primary);
+}
+
+.badge-online {
+  background: var(--color-success);
+  color: #10261a;
+}
+
+.badge-offline {
+  background: var(--color-danger);
+}
+
+.badge-dead {
+  background: #3a3a3a;
+}
+
+.role-config-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.role-config-item {
+  background: var(--color-surface-alt);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.rules-explainer p {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.error-text {
+  color: var(--color-danger);
+}
+
+.room-code {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-code-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  background: var(--color-surface-alt);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.room-code-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.host-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.face-down-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.face-down-card-inner {
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(135deg, var(--color-primary), #3a2fbf);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  gap: 6px;
+  text-align: center;
+  padding: 6px;
+}
+
+.face-down-card-locked .face-down-card-inner {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.face-down-card-mine .face-down-card-inner {
+  outline: 3px solid var(--color-success);
+}
+
+.face-down-card-hovering {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.face-down-card-taken {
+  font-size: 12px;
+}
+
+.phase-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.phase-banner-count {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.countdown {
+  font-size: 40px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.paused-banner {
+  color: #f5a623;
+  font-weight: 600;
+}
+
+.role-badge {
+  display: inline-block;
+  font-size: 24px;
+  font-weight: 800;
+  padding: 12px 24px;
+  border-radius: 12px;
+  background: var(--color-surface-alt);
+}
+
+.action-target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.witch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  position: sticky;
+  top: 0;
+  background: var(--color-danger);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  z-index: 10;
+}
+
+.reveal-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.reveal-table th,
+.reveal-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px;
+  text-align: left;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.modal-content {
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 90vw;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+  }
+
+  .room-code-value {
+    font-size: 22px;
+  }
+}
