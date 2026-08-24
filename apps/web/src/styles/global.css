@@ -185,6 +185,11 @@ body {
   color: var(--color-danger);
 }
 
+.muted-text {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
 .room-code {
   display: flex;
   flex-direction: column;

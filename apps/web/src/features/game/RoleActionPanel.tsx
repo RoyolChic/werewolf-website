@@ -159,15 +159,19 @@ function WitchNightPanel({ publicState, privateState, roomId }: RoleActionPanelP
 function DayDiscussionPanel({ publicState, privateState, roomId }: RoleActionPanelProps & { roomId: string }) {
   const socket = useSocket();
   const canSkip = privateState.availableActions.includes("SKIP_DAY_DISCUSSION");
+  const currentSpeakerId = publicState.currentSpeakerPlayerId;
+  const currentSpeakerName = currentSpeakerId ? playerName(publicState, currentSpeakerId) : null;
+  const upcoming = publicState.discussionSpeakingOrder
+    .slice(publicState.discussionSpeakingOrder.indexOf(currentSpeakerId ?? "") + 1)
+    .map((id) => playerName(publicState, id));
 
   return (
     <section className="card">
       <h2>白天討論</h2>
-      <p>
-        {publicState.discussionSkipRequesterIds.length} / {publicState.players.filter((p) => p.isAlive).length} 人已跳過
-      </p>
+      <p>目前發言：{currentSpeakerName ?? "-"}</p>
+      {upcoming.length > 0 && <p className="muted-text">接下來：{upcoming.join("、")}</p>}
       <Button variant="secondary" disabled={!canSkip} onClick={() => socket.emit(CLIENT_EVENTS.SKIP_DAY_DISCUSSION, { roomId })}>
-        {canSkip ? "跳過發言" : "已跳過"}
+        {canSkip ? "結束我的發言" : "等待對方發言結束..."}
       </Button>
     </section>
   );
