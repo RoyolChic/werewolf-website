@@ -1,6 +1,6 @@
 import type { Room } from "../rooms/roomTypes";
 import { broadcastRoom } from "../rooms/roomBroadcast";
-import { enterPhase } from "./phases";
+import { advanceToNextSpeakerOrVote } from "./phases";
 
 export function clearDiscussionTimer(room: Room): void {
   if (room.discussionTimeoutHandle) {
@@ -17,7 +17,7 @@ export function startDiscussionTimer(room: Room): void {
   room.discussionTimeoutHandle = setTimeout(() => {
     room.discussionTimeoutHandle = null;
     room.gameState.discussionEndsAt = null;
-    enterPhase(room, "DAY_VOTE");
+    advanceToNextSpeakerOrVote(room);
     broadcastRoom(room);
   }, remainingMs);
 }

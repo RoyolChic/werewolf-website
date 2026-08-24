@@ -95,12 +95,8 @@ export function skipWholeDayIntoNextNight(room: Room): void {
   advanceThroughAnnouncementToDiscussion();
   expect_(room.gameState.phase === "DAY_DISCUSSION", "expected DAY_DISCUSSION after announcement");
 
-  for (const player of room.players.values()) {
-    if (player.isAlive) {
-      skipDayDiscussion(room, player.playerId);
-    }
-  }
-  expect_(room.gameState.phase === "DAY_VOTE", "expected DAY_VOTE after everyone skips discussion");
+  skipAllSpeakingTurns(room);
+  expect_(room.gameState.phase === "DAY_VOTE", "expected DAY_VOTE after everyone's turn is skipped");
 
   for (const player of room.players.values()) {
     if (player.isAlive) {
@@ -111,6 +107,23 @@ export function skipWholeDayIntoNextNight(room: Room): void {
 
   advanceThroughExileToNextNight();
   expect_(room.gameState.phase === "NIGHT_WEREWOLF", "expected NIGHT_WEREWOLF at the start of the next night");
+}
+
+/** Skips every alive player's speaking turn in order, driving DAY_DISCUSSION through to DAY_VOTE. */
+export function skipAllSpeakingTurns(room: Room): void {
+  let guard = 0;
+  while (room.gameState.phase === "DAY_DISCUSSION") {
+    const currentSpeakerId = room.gameState.discussionSpeakingOrder[room.gameState.currentSpeakerIndex];
+    if (!currentSpeakerId) break;
+    const outcome = skipDayDiscussion(room, currentSpeakerId);
+    if (!outcome.ok) {
+      throw new Error(`failed to skip speaking turn: ${outcome.message}`);
+    }
+    guard += 1;
+    if (guard > 50) {
+      throw new Error("skipAllSpeakingTurns did not terminate");
+    }
+  }
 }
 
 function expect_(condition: boolean, message: string): void {

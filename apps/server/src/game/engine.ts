@@ -1,7 +1,7 @@
 import { roleFaction } from "@kill-wolf/shared";
 import type { Room } from "../rooms/roomTypes";
 import { pickRandom } from "../utils/random";
-import { alivePlayers, aliveWerewolves, enterPhase } from "./phases";
+import { advanceToNextSpeakerOrVote, alivePlayers, aliveWerewolves, enterPhase } from "./phases";
 import { createShuffledCards } from "./roleAssignment";
 
 export interface ActionOutcome {
@@ -259,16 +259,12 @@ export function skipDayDiscussion(room: Room, playerId: string): ActionOutcome {
   if (!player || !player.isAlive) {
     return fail("FORBIDDEN", "已死亡玩家不能操作");
   }
-  if (room.gameState.discussionSkipRequesterIds.has(playerId)) {
-    return fail("ALREADY_SKIPPED", "已按過跳過");
+  const currentSpeakerId = room.gameState.discussionSpeakingOrder[room.gameState.currentSpeakerIndex];
+  if (playerId !== currentSpeakerId) {
+    return fail("NOT_YOUR_TURN", "現在不是你的發言時間");
   }
 
-  room.gameState.discussionSkipRequesterIds.add(playerId);
-
-  const alive = alivePlayers(room);
-  if (alive.every((p) => room.gameState.discussionSkipRequesterIds.has(p.playerId))) {
-    enterPhase(room, "DAY_VOTE");
-  }
+  advanceToNextSpeakerOrVote(room);
 
   return ok();
 }

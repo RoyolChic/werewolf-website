@@ -45,6 +45,48 @@ function computeNightDeaths(room: Room): string[] {
   return [...deaths];
 }
 
+function markLastRemoved(room: Room, playerId: string): void {
+  const seatIndex = room.playerOrder.indexOf(playerId);
+  if (seatIndex !== -1) {
+    room.gameState.lastRemovedSeatIndex = seatIndex;
+  }
+}
+
+/**
+ * Each day's speaking order starts at the seat right after whoever was most recently removed
+ * (the prior day's exile if there was one, otherwise the prior night's death), wrapping through
+ * every currently alive player exactly once in fixed seat order.
+ */
+function computeSpeakingOrder(room: Room): string[] {
+  const seats = room.playerOrder;
+  const n = seats.length;
+  if (n === 0) return [];
+
+  const order: string[] = [];
+  for (let offset = 1; offset <= n; offset += 1) {
+    const seatIndex = (room.gameState.lastRemovedSeatIndex + offset + n) % n;
+    const playerId = seats[seatIndex];
+    if (room.players.get(playerId)?.isAlive) {
+      order.push(playerId);
+    }
+  }
+  return order;
+}
+
+/**
+ * Called when the current speaker's turn ends (their timer expired, or they skipped it).
+ * Hands the floor to the next speaker in this day's order, or moves on to voting once
+ * everyone has had their turn.
+ */
+export function advanceToNextSpeakerOrVote(room: Room): void {
+  room.gameState.currentSpeakerIndex += 1;
+  if (room.gameState.currentSpeakerIndex >= room.gameState.discussionSpeakingOrder.length) {
+    enterPhase(room, "DAY_VOTE");
+  } else {
+    startDiscussionTimer(room);
+  }
+}
+
 export function enterPhase(room: Room, phase: GamePhase): void {
   room.gameState.phase = phase;
 
@@ -88,6 +130,14 @@ export function enterPhase(room: Room, phase: GamePhase): void {
         if (player) player.isAlive = false;
       }
       room.gameState.lastNightDeathPlayerIds = deaths;
+      // Prefer the werewolves' actual kill as the anchor over a secondary poison death, since
+      // it's the "main" death of the night; only fall back to the poison victim if the kill
+      // target was saved.
+      if (deaths.includes(room.gameState.nightKillTargetPlayerId ?? "")) {
+        markLastRemoved(room, room.gameState.nightKillTargetPlayerId!);
+      } else if (deaths.length > 0) {
+        markLastRemoved(room, deaths[0]);
+      }
 
       const winner = checkRoomWinner(room);
       if (winner) {
@@ -100,11 +150,16 @@ export function enterPhase(room: Room, phase: GamePhase): void {
     }
     case "DAY_DISCUSSION": {
       clearTransitionTimeout(room);
-      room.gameState.discussionSkipRequesterIds.clear();
       room.gameState.dayVotes.clear();
       room.gameState.voteRound = 1;
       room.gameState.voteRunoffCandidateIds = null;
       room.gameState.discussionRemainingMsAtPause = null;
+      room.gameState.discussionSpeakingOrder = computeSpeakingOrder(room);
+      room.gameState.currentSpeakerIndex = 0;
+      if (room.gameState.discussionSpeakingOrder.length === 0) {
+        enterPhase(room, "DAY_VOTE");
+        break;
+      }
       startDiscussionTimer(room);
       break;
     }
@@ -119,6 +174,7 @@ export function enterPhase(room: Room, phase: GamePhase): void {
       if (exiledPlayerId) {
         const player = room.players.get(exiledPlayerId);
         if (player) player.isAlive = false;
+        markLastRemoved(room, exiledPlayerId);
       }
 
       const winner = checkRoomWinner(room);

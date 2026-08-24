@@ -28,7 +28,9 @@ function computeAvailableActions(room: Room, player: Player): ActionType[] {
       if (player.role !== "WITCH") return [];
       return gameState.witchActedTonight ? [] : ["WITCH_ACTION"];
     case "DAY_DISCUSSION":
-      return gameState.discussionSkipRequesterIds.has(player.playerId) ? [] : ["SKIP_DAY_DISCUSSION"];
+      return gameState.discussionSpeakingOrder[gameState.currentSpeakerIndex] === player.playerId
+        ? ["SKIP_DAY_DISCUSSION"]
+        : [];
     case "DAY_VOTE":
       return gameState.dayVotes.has(player.playerId) ? [] : ["DAY_VOTE"];
     default:

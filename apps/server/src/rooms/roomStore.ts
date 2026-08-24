@@ -30,7 +30,9 @@ function createInitialGameState(): GameState {
     winner: null,
     discussionEndsAt: null,
     discussionRemainingMsAtPause: null,
-    discussionSkipRequesterIds: new Set(),
+    discussionSpeakingOrder: [],
+    currentSpeakerIndex: 0,
+    lastRemovedSeatIndex: -1,
   };
 }
 

@@ -63,7 +63,16 @@ export interface GameState {
   winner: Faction | null;
   discussionEndsAt: number | null;
   discussionRemainingMsAtPause: number | null;
-  discussionSkipRequesterIds: Set<string>;
+  /** Speaking order for the current day's discussion, alive playerIds only, seat order. */
+  discussionSpeakingOrder: string[];
+  /** Index into discussionSpeakingOrder of whoever currently holds the floor. */
+  currentSpeakerIndex: number;
+  /**
+   * Seat index (into Room.playerOrder) of whoever was most recently removed from the game --
+   * either exiled or killed overnight. Determines where the next day's speaking order starts
+   * (the seat right after them). -1 before anyone has died, so day 1 starts at seat 0.
+   */
+  lastRemovedSeatIndex: number;
 }
 
 export interface PendingReconnectClaim {

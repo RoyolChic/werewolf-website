@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearAllRoomsForTest } from "../src/rooms/roomStore";
-import { dayVote, seerCheck, skipDayDiscussion, werewolfVote, witchAction } from "../src/game/engine";
-import { advanceThroughAnnouncementToDiscussion, playersWithRole, setupNightReadyRoom } from "./helpers";
+import { dayVote, seerCheck, werewolfVote, witchAction } from "../src/game/engine";
+import { advanceThroughAnnouncementToDiscussion, playersWithRole, setupNightReadyRoom, skipAllSpeakingTurns } from "./helpers";
 import type { Room } from "../src/rooms/roomTypes";
 
 beforeEach(() => {
@@ -26,9 +26,7 @@ function reachDayVote(room: Room): void {
   advanceThroughAnnouncementToDiscussion();
   expect(room.gameState.phase).toBe("DAY_DISCUSSION");
 
-  for (const player of room.players.values()) {
-    if (player.isAlive) skipDayDiscussion(room, player.playerId);
-  }
+  skipAllSpeakingTurns(room);
   expect(room.gameState.phase).toBe("DAY_VOTE");
 }
 
@@ -52,9 +50,7 @@ function reachDay2Vote(room: Room): void {
   witchAction(room, witchId, "SKIP", undefined);
 
   advanceThroughAnnouncementToDiscussion();
-  for (const player of room.players.values()) {
-    if (player.isAlive) skipDayDiscussion(room, player.playerId);
-  }
+  skipAllSpeakingTurns(room);
   expect(room.gameState.phase).toBe("DAY_VOTE");
   expect(room.gameState.dayNumber).toBe(2);
 }

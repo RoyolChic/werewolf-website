@@ -91,7 +91,11 @@ export function buildPublicRoomState(room: Room): PublicRoomState {
     nightNumber: room.gameState.nightNumber,
     discussionSecondsRemaining: computeDiscussionSecondsRemaining(room),
     discussionEndsAt: computeDiscussionEndsAt(room),
-    discussionSkipRequesterIds: [...room.gameState.discussionSkipRequesterIds],
+    discussionSpeakingOrder: room.gameState.phase === "DAY_DISCUSSION" ? room.gameState.discussionSpeakingOrder : [],
+    currentSpeakerPlayerId:
+      room.gameState.phase === "DAY_DISCUSSION"
+        ? room.gameState.discussionSpeakingOrder[room.gameState.currentSpeakerIndex] ?? null
+        : null,
     lastNightDeathPlayerIds: room.gameState.lastNightDeathPlayerIds,
     exileResult: room.gameState.exileResult,
     winner: room.gameState.winner,
