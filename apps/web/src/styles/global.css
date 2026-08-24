@@ -357,3 +357,43 @@ body {
     font-size: 22px;
   }
 }
+
+.dev-multiview-page {
+  max-width: 960px;
+}
+
+.dev-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dev-player-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.dev-player-tab {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dev-player-tab-active {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.dev-player-meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
