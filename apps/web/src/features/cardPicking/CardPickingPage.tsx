@@ -1,7 +1,7 @@
 import { CLIENT_EVENTS, type PrivatePlayerState, type PublicRoomState } from "@kill-wolf/shared";
 import { useSocket } from "../../lib/socketContext";
 import { Button } from "../../components/Button";
-import { RoleBadge } from "../../components/RoleBadge";
+import { RoleInfoPanel } from "../../components/RoleInfoPanel";
 import { CardGrid } from "./CardGrid";
 
 interface CardPickingPageProps {
@@ -21,7 +21,7 @@ export function CardPickingPage({ publicState, privateState, selfPlayerId }: Car
     return (
       <div className="page centered role-reveal-page">
         <h1>你的角色是</h1>
-        {privateState.role && <RoleBadge role={privateState.role} />}
+        {privateState.role && <RoleInfoPanel role={privateState.role} variantIndex={privateState.roleImageVariantIndex} />}
         <p>
           {publicState.players.filter((p) => p.hasPickedCard).length} / {publicState.players.length} 人已確認角色
         </p>

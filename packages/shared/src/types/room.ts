@@ -1,7 +1,12 @@
+import type { OptionalRole } from "../constants/roles";
+
 export interface RoleCounts {
   WEREWOLF: number;
   SEER: number;
   WITCH: number;
+  HUNTER: number;
+  GUARD: number;
+  KNIGHT: number;
   VILLAGER: number;
 }
 
@@ -18,4 +23,5 @@ export interface RoomConfig {
   roleCounts: RoleCounts;
   dayDiscussionSeconds: number;
   witchSelfSaveRule: WitchSelfSaveRule;
+  optionalRoles: OptionalRole[];
 }

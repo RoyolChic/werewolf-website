@@ -1,4 +1,5 @@
 import type { WitchSelfSaveRule, DeadViewMode } from "../types/room";
+import type { OptionalRole } from "../constants/roles";
 import type { PublicRoomState } from "../types/publicState";
 import type { PrivatePlayerState } from "../types/privateState";
 import type { Faction } from "../types/role";
@@ -10,6 +11,7 @@ export interface CreateRoomPayload {
   dayDiscussionSeconds: number;
   witchSelfSaveRule: WitchSelfSaveRule;
   hostName: string;
+  optionalRoles?: OptionalRole[];
 }
 
 export interface JoinRoomPayload {
@@ -65,12 +67,21 @@ export interface SetMaxPlayersPayload {
   maxPlayers: number;
 }
 
+export interface SetOptionalRolesPayload {
+  roomId: string;
+  roles: OptionalRole[];
+}
+
 export interface SetDeadViewModePayload {
   roomId: string;
   mode: DeadViewMode;
 }
 
 export interface SkipDayDiscussionPayload {
+  roomId: string;
+}
+
+export interface EndLastWordsPayload {
   roomId: string;
 }
 
@@ -83,6 +94,14 @@ export interface WerewolfVotePayload {
   targetPlayerId: string;
 }
 
+export interface WerewolfConfirmVotePayload {
+  roomId: string;
+}
+
+export interface WerewolfUnconfirmVotePayload {
+  roomId: string;
+}
+
 export interface SeerCheckPayload {
   roomId: string;
   targetPlayerId: string;
@@ -92,6 +111,21 @@ export interface WitchActionPayload {
   roomId: string;
   action: "SAVE" | "POISON" | "SKIP";
   targetPlayerId?: string;
+}
+
+export interface GuardProtectPayload {
+  roomId: string;
+  targetPlayerId: string;
+}
+
+export interface HunterShootPayload {
+  roomId: string;
+  targetPlayerId: string | null;
+}
+
+export interface KnightDuelPayload {
+  roomId: string;
+  targetPlayerId: string;
 }
 
 export interface DayVotePayload {

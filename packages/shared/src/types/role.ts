@@ -1,4 +1,4 @@
-export const ROLES = ["WEREWOLF", "SEER", "WITCH", "VILLAGER"] as const;
+export const ROLES = ["WEREWOLF", "SEER", "WITCH", "HUNTER", "GUARD", "KNIGHT", "VILLAGER"] as const;
 
 export type Role = (typeof ROLES)[number];
 

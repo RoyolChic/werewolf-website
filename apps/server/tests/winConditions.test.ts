@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateWinner } from "@kill-wolf/shared";
 import { clearAllRoomsForTest } from "../src/rooms/roomStore";
 import { dayVote, seerCheck, werewolfVote, witchAction } from "../src/game/engine";
-import { playersWithRole, setupNightReadyRoom } from "./helpers";
+import { confirmWerewolfKill, playersWithRole, setupNightReadyRoom } from "./helpers";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -36,7 +36,7 @@ describe("win conditions (engine integration)", () => {
     const wolves = playersWithRole(room, "WEREWOLF");
     const villagers = playersWithRole(room, "VILLAGER");
 
-    wolves.forEach((wolfId) => werewolfVote(room, wolfId, villagers[0]));
+    confirmWerewolfKill(room, wolves, villagers[0]);
     const seerId = playersWithRole(room, "SEER")[0];
     seerCheck(room, seerId, wolves[0]);
     const witchId = playersWithRole(room, "WITCH")[0];

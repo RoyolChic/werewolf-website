@@ -4,6 +4,7 @@ import {
   CLIENT_EVENTS,
   SERVER_EVENTS,
   type ErrorPayload,
+  type PlayerKickedPayload,
   type PrivatePlayerState,
   type PrivateStateUpdatedPayload,
   type PublicRoomState,
@@ -14,6 +15,8 @@ import {
 import { createIsolatedSocket } from "../../lib/socketClient";
 import { SocketProvider } from "../../lib/socketContext";
 import { Button } from "../../components/Button";
+import { SceneBackdrop } from "../../components/SceneBackdrop";
+import { DEFAULT_BACKGROUND_PATH, PHASE_BACKGROUND_PATH } from "../../lib/phaseBackground";
 import { DEFAULT_ROOM_CONFIG_VALUE, RoomConfigPanel } from "../home/RoomConfigPanel";
 import { PhaseView } from "../../app/PhaseView";
 
@@ -49,6 +52,13 @@ export function DevMultiViewPage() {
     });
     socket.on(SERVER_EVENTS.ERROR, (payload: ErrorPayload) => {
       setPlayers((prev) => prev.map((p) => (p.key === key ? { ...p, lastError: payload.message } : p)));
+    });
+    // The server only tells the kicked player's own socket -- without this, a kicked dev player
+    // stays in `players` forever, so the room never looks like it has a free slot again.
+    socket.on(SERVER_EVENTS.PLAYER_KICKED, (_payload: PlayerKickedPayload) => {
+      socket.disconnect();
+      setPlayers((prev) => prev.filter((p) => p.key !== key));
+      setActiveKey((prev) => (prev === key ? null : prev));
     });
   }, []);
 
@@ -111,87 +121,85 @@ export function DevMultiViewPage() {
   }, [players]);
 
   const activePlayer = players.find((p) => p.key === activeKey) ?? null;
+  const backgroundPath = activePlayer?.publicState
+    ? PHASE_BACKGROUND_PATH[activePlayer.publicState.phase]
+    : DEFAULT_BACKGROUND_PATH;
+
+  if (!roomId) {
+    return (
+      <>
+        <SceneBackdrop imagePath={backgroundPath} />
+        <div className="page centered">
+          <section className="card">
+            <h1>開發測試工具</h1>
+            <p className="error-text">此頁面僅供開發環境使用，正式站不會包含此頁面。</p>
+            <RoomConfigPanel value={config} onChange={setConfig} />
+            <Button onClick={createRoom} disabled={busy}>
+              建立測試房並加入房主
+            </Button>
+          </section>
+        </div>
+      </>
+    );
+  }
 
   return (
-    <div className="page dev-multiview-page">
-      <h1>開發測試工具（DevMultiViewPage）</h1>
-      <p className="error-text">此頁面僅供開發環境使用，正式站不會包含此頁面。</p>
-
-      {!roomId && (
-        <section className="card">
-          <h2>建立測試房</h2>
-          <RoomConfigPanel value={config} onChange={setConfig} />
-          <Button onClick={createRoom} disabled={busy}>
-            建立測試房並加入房主
-          </Button>
-        </section>
-      )}
-
-      {roomId && (
-        <section className="card">
-          <h2>房間 {roomId}</h2>
-          <p>
-            目前 {players.length} / {config.maxPlayers} 人
-          </p>
-          <div className="dev-toolbar">
-            <Button variant="secondary" onClick={addBot} disabled={players.length >= config.maxPlayers}>
-              加入一個假玩家
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={fillRemainingSlots}
-              disabled={players.length >= config.maxPlayers}
+    <>
+      <SceneBackdrop imagePath={backgroundPath} />
+      {/*
+        Everything below the toolbar bar is intentionally the *exact* structure RoomPage.tsx uses
+        (SceneBackdrop -> ".page room-page" -> PhaseView) so the simulated view stays visually in
+        sync with the real page. The toolbar is the only thing this tool adds on top of that.
+      */}
+      <div className="dev-toolbar-bar">
+        <span className="dev-toolbar-info">
+          開發用 · {roomId} · {players.length}/{config.maxPlayers}
+          {activePlayer?.publicState && ` · ${activePlayer.publicState.phase}`}
+        </span>
+        <Button variant="secondary" className="btn-small" onClick={addBot} disabled={players.length >= config.maxPlayers}>
+          +假玩家
+        </Button>
+        <Button
+          variant="secondary"
+          className="btn-small"
+          onClick={fillRemainingSlots}
+          disabled={players.length >= config.maxPlayers}
+        >
+          補滿
+        </Button>
+        <Button variant="danger" className="btn-small" onClick={resetAll}>
+          重置
+        </Button>
+        <div className="dev-toolbar-tabs">
+          {players.map((p) => (
+            <button
+              key={p.key}
+              className={`dev-player-tab ${p.key === activeKey ? "dev-player-tab-active" : ""}`}
+              onClick={() => setActiveKey(p.key)}
             >
-              一鍵補滿假玩家
-            </Button>
-            <Button variant="danger" onClick={resetAll}>
-              重置（斷開所有連線）
-            </Button>
-          </div>
-        </section>
-      )}
-
-      {players.length > 0 && (
-        <section className="card">
-          <div className="dev-player-tabs">
-            {players.map((p) => (
-              <button
-                key={p.key}
-                className={`dev-player-tab ${p.key === activeKey ? "dev-player-tab-active" : ""}`}
-                onClick={() => setActiveKey(p.key)}
-              >
-                {p.label}
-                {p.privateState?.role ? ` · ${p.privateState.role}` : ""}
-                {p.publicState?.players.find((pp) => pp.playerId === p.playerId)?.isAlive === false ? " · 死亡" : ""}
-                {p.lastError ? " ⚠" : ""}
-              </button>
-            ))}
-          </div>
-
-          {activePlayer && (
-            <div className="dev-player-detail">
-              <p className="dev-player-meta">
-                phase: <strong>{activePlayer.publicState?.phase ?? "-"}</strong>
-                {"  "}day: {activePlayer.publicState?.dayNumber ?? 0} / night: {activePlayer.publicState?.nightNumber ?? 0}
-              </p>
-              {activePlayer.lastError && <p className="error-text">上次錯誤：{activePlayer.lastError}</p>}
-
-              {activePlayer.publicState && activePlayer.privateState && activePlayer.playerId ? (
-                <SocketProvider socket={activePlayer.socket}>
-                  <PhaseView
-                    publicState={activePlayer.publicState}
-                    privateState={activePlayer.privateState}
-                    selfPlayerId={activePlayer.playerId}
-                  />
-                </SocketProvider>
-              ) : (
-                <p>等待這位玩家的狀態同步...</p>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-    </div>
+              {p.label}
+              {p.privateState?.role ? ` · ${p.privateState.role}` : ""}
+              {p.publicState?.players.find((pp) => pp.playerId === p.playerId)?.isAlive === false ? " · 死亡" : ""}
+              {p.lastError ? " ⚠" : ""}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="page room-page">
+        {activePlayer?.lastError && <div className="toast">{activePlayer.lastError}</div>}
+        {activePlayer?.publicState && activePlayer.privateState && activePlayer.playerId ? (
+          <SocketProvider socket={activePlayer.socket}>
+            <PhaseView
+              publicState={activePlayer.publicState}
+              privateState={activePlayer.privateState}
+              selfPlayerId={activePlayer.playerId}
+            />
+          </SocketProvider>
+        ) : (
+          <p>{activePlayer ? "等待這位玩家的狀態同步..." : "請選擇一個玩家頁籤"}</p>
+        )}
+      </div>
+    </>
   );
 }
 

@@ -8,6 +8,11 @@ export const DAY_DISCUSSION_SECONDS_MIN = 60;
 export const DAY_DISCUSSION_SECONDS_MAX = 180;
 export const DAY_DISCUSSION_SECONDS_DEFAULT = 120;
 
+export const NIGHT_ACTION_SECONDS = 60;
+
+/** How long an exiled (or otherwise day-time removed) player gets to speak their last words before night falls. */
+export const LAST_WORDS_SECONDS = 120;
+
 export const PLAYER_NAME_MIN_LENGTH = 1;
 export const PLAYER_NAME_MAX_LENGTH = 16;
 

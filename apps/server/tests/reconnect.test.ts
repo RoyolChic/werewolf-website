@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearAllRoomsForTest } from "../src/rooms/roomStore";
 import {
   confirmReconnect,
@@ -7,7 +7,7 @@ import {
   kickPlayer,
   maybeTransferHost,
 } from "../src/rooms/roomService";
-import { createTestRoom } from "./helpers";
+import { createTestRoom, setupNightReadyRoom } from "./helpers";
 
 afterEach(() => {
   clearAllRoomsForTest();
@@ -138,5 +138,35 @@ describe("reconnect", () => {
     // Only a further disconnect of the *current* host would trigger another transfer.
     maybeTransferHost(room);
     expect(room.hostPlayerId).toBe(playerIds[1]);
+  });
+});
+
+describe("reconnect during a night action timer", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    clearAllRoomsForTest();
+  });
+
+  it("pauses the night action countdown when an alive player disconnects, and resumes it on reconnect", () => {
+    const { room, playerIds } = setupNightReadyRoom(6);
+    expect(room.gameState.phase).toBe("NIGHT_WEREWOLF");
+    expect(room.gameState.nightActionEndsAt).not.toBeNull();
+
+    const player = room.players.get(playerIds[0])!;
+    const originalToken = player.reconnectToken!;
+    disconnectPlayerBySocketId(player.socketId!, room);
+
+    expect(room.gameState.nightActionEndsAt).toBeNull();
+    expect(room.gameState.nightActionRemainingMsAtPause).not.toBeNull();
+
+    const result = joinRoom({ roomId: room.roomId, name: "anything", reconnectToken: originalToken, socketId: "new-socket" });
+    expect(result.ok).toBe(true);
+
+    expect(room.gameState.nightActionEndsAt).not.toBeNull();
+    expect(room.gameState.nightActionRemainingMsAtPause).toBeNull();
   });
 });

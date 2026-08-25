@@ -2,8 +2,14 @@ import {
   DAY_DISCUSSION_SECONDS_DEFAULT,
   DAY_DISCUSSION_SECONDS_MAX,
   DAY_DISCUSSION_SECONDS_MIN,
-  ROLE_COUNTS_BY_PLAYER_COUNT,
+  getRoleCountsForPlayerCount,
+  maxOptionalRolesForPlayerCount,
+  OPTIONAL_ROLES,
   ROLE_LABELS,
+  ROLE_RULES,
+  SUPPORTED_PLAYER_COUNTS,
+  type OptionalRole,
+  type Role,
   type WitchSelfSaveRule,
 } from "@kill-wolf/shared";
 
@@ -11,6 +17,7 @@ export interface RoomConfigValue {
   maxPlayers: number;
   dayDiscussionSeconds: number;
   witchSelfSaveRule: WitchSelfSaveRule;
+  optionalRoles: OptionalRole[];
 }
 
 interface RoomConfigPanelProps {
@@ -19,7 +26,19 @@ interface RoomConfigPanelProps {
 }
 
 export function RoomConfigPanel({ value, onChange }: RoomConfigPanelProps) {
-  const roleCounts = ROLE_COUNTS_BY_PLAYER_COUNT[value.maxPlayers];
+  const roleCounts = getRoleCountsForPlayerCount(value.maxPlayers, value.optionalRoles);
+  const maxOptionalRoles = maxOptionalRolesForPlayerCount(value.maxPlayers);
+
+  function toggleOptionalRole(role: OptionalRole) {
+    const isSelected = value.optionalRoles.includes(role);
+    if (!isSelected && value.optionalRoles.length >= maxOptionalRoles) {
+      return;
+    }
+    const optionalRoles = isSelected
+      ? value.optionalRoles.filter((r) => r !== role)
+      : [...value.optionalRoles, role];
+    onChange({ ...value, optionalRoles });
+  }
 
   return (
     <div className="room-config-panel">
@@ -27,9 +46,13 @@ export function RoomConfigPanel({ value, onChange }: RoomConfigPanelProps) {
         <span>遊玩人數</span>
         <select
           value={value.maxPlayers}
-          onChange={(e) => onChange({ ...value, maxPlayers: Number(e.target.value) })}
+          onChange={(e) => {
+            const maxPlayers = Number(e.target.value);
+            const optionalRoles = value.optionalRoles.slice(0, maxOptionalRolesForPlayerCount(maxPlayers));
+            onChange({ ...value, maxPlayers, optionalRoles });
+          }}
         >
-          {Object.keys(ROLE_COUNTS_BY_PLAYER_COUNT).map((count) => (
+          {SUPPORTED_PLAYER_COUNTS.map((count) => (
             <option key={count} value={count}>
               {count} 人
             </option>
@@ -45,6 +68,24 @@ export function RoomConfigPanel({ value, onChange }: RoomConfigPanelProps) {
               {ROLE_LABELS[role]} x{count}
             </span>
           ))}
+      </div>
+
+      <div className="field">
+        <span>
+          特殊角色（最多可加 {maxOptionalRoles} 個，會替換掉平民名額）
+        </span>
+        <div className="optional-role-toggles">
+          {OPTIONAL_ROLES.map((role) => {
+            const checked = value.optionalRoles.includes(role);
+            const disabled = !checked && value.optionalRoles.length >= maxOptionalRoles;
+            return (
+              <label key={role} className={`optional-role-toggle ${disabled ? "optional-role-toggle-disabled" : ""}`}>
+                <input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleOptionalRole(role)} />
+                <span>{ROLE_LABELS[role]}</span>
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       <label className="field">
@@ -74,8 +115,18 @@ export function RoomConfigPanel({ value, onChange }: RoomConfigPanelProps) {
         <h3>勝利條件</h3>
         <p>狼人勝利：狼人數量大於或等於好人數量。</p>
         <p>好人勝利：所有狼人死亡。</p>
-        <h3>女巫技能</h3>
-        <p>解藥可救當晚被狼人擊殺的玩家，毒藥可毒死一名玩家，兩者皆只能使用一次，且同一晚不能同時使用。</p>
+        <h3>角色技能</h3>
+        {/* Pulled straight from ROLE_RULES (the same source the home page's role-intro section
+            uses) so this always reflects whichever roles are actually in the current config,
+            instead of a hand-maintained copy that can drift out of sync with it. */}
+        {(Object.entries(roleCounts) as [Role, number][])
+          .filter(([, count]) => count > 0)
+          .map(([role]) => (
+            <p key={role}>
+              <strong>{ROLE_LABELS[role]}：</strong>
+              {ROLE_RULES[role].summary}
+            </p>
+          ))}
       </div>
     </div>
   );
@@ -85,4 +136,5 @@ export const DEFAULT_ROOM_CONFIG_VALUE: RoomConfigValue = {
   maxPlayers: 6,
   dayDiscussionSeconds: DAY_DISCUSSION_SECONDS_DEFAULT,
   witchSelfSaveRule: "FIRST_NIGHT_ONLY",
+  optionalRoles: [],
 };

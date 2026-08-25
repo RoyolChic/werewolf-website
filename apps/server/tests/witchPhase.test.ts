@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NIGHT_ACTION_SECONDS } from "@kill-wolf/shared";
 import { clearAllRoomsForTest } from "../src/rooms/roomStore";
-import { seerCheck, werewolfVote, witchAction } from "../src/game/engine";
-import { playersWithRole, setupNightReadyRoom, skipWholeDayIntoNextNight } from "./helpers";
+import { seerCheck, witchAction } from "../src/game/engine";
+import { buildPrivateState } from "../src/game/privateState";
+import { confirmWerewolfKill, playersWithRole, setupNightReadyRoom, skipWholeDayIntoNextNight } from "./helpers";
 import type { Room } from "../src/rooms/roomTypes";
 
 beforeEach(() => {
@@ -15,7 +17,7 @@ afterEach(() => {
 
 function killTargetAndReachWitchPhase(room: Room, targetPlayerId: string): void {
   const wolves = playersWithRole(room, "WEREWOLF");
-  wolves.forEach((wolfId) => werewolfVote(room, wolfId, targetPlayerId));
+  confirmWerewolfKill(room, wolves, targetPlayerId);
   const seerId = playersWithRole(room, "SEER")[0];
   const seerTarget = [...room.players.keys()].find((id) => id !== seerId && room.players.get(id)!.isAlive)!;
   seerCheck(room, seerId, seerTarget);
@@ -110,5 +112,53 @@ describe("witch night phase", () => {
     const result = witchAction(room, witchId, "POISON", villagers[1]);
     expect(result.ok).toBe(false);
     expect(result.code).toBe("INVALID_TARGET");
+  });
+
+  it("skips the witch's action and advances to DAY_ANNOUNCEMENT once the 60s clock runs out", () => {
+    const { room } = setupNightReadyRoom(6, "ANYTIME");
+    const villagers = playersWithRole(room, "VILLAGER");
+    killTargetAndReachWitchPhase(room, villagers[0]);
+    expect(room.gameState.phase).toBe("NIGHT_WITCH");
+
+    vi.advanceTimersByTime(NIGHT_ACTION_SECONDS * 1000 + 100);
+
+    expect(room.gameState.phase).toBe("DAY_ANNOUNCEMENT");
+    expect(room.gameState.witch.hasAntidote).toBe(true);
+    expect(room.gameState.witch.hasPoison).toBe(true);
+  });
+
+  it("hides the night's kill target from the witch once she's out of antidote", () => {
+    const { room } = setupNightReadyRoom(8, "ANYTIME");
+    const witchId = playersWithRole(room, "WITCH")[0];
+    const villagers = playersWithRole(room, "VILLAGER");
+
+    killTargetAndReachWitchPhase(room, villagers[0]);
+    witchAction(room, witchId, "SAVE", villagers[0]);
+    expect(room.gameState.witch.hasAntidote).toBe(false);
+
+    skipWholeDayIntoNextNight(room);
+    killTargetAndReachWitchPhase(room, villagers[1]);
+
+    // The kill actually happened (villagers[1] is really the target), but without an antidote
+    // left there's nothing she can do about it -- the server shouldn't leak who it was.
+    expect(room.gameState.nightKillTargetPlayerId).toBe(villagers[1]);
+    const privateState = buildPrivateState(room, witchId)!;
+    expect(privateState.witch?.hasAntidote).toBe(false);
+    expect(privateState.witch?.tonightKilledPlayerId).toBeNull();
+  });
+
+  it("still runs the full timer when the witch is already dead, instead of skipping instantly", () => {
+    const { room } = setupNightReadyRoom(8, "ANYTIME");
+    const witchId = playersWithRole(room, "WITCH")[0];
+    room.players.get(witchId)!.isAlive = false;
+    const villagers = playersWithRole(room, "VILLAGER");
+    killTargetAndReachWitchPhase(room, villagers[0]);
+
+    expect(room.gameState.phase).toBe("NIGHT_WITCH");
+    vi.advanceTimersByTime(NIGHT_ACTION_SECONDS * 1000 - 100);
+    expect(room.gameState.phase).toBe("NIGHT_WITCH");
+
+    vi.advanceTimersByTime(200);
+    expect(room.gameState.phase).toBe("DAY_ANNOUNCEMENT");
   });
 });

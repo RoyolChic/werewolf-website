@@ -13,12 +13,19 @@ export const CLIENT_EVENTS = {
   SET_MAX_PLAYERS: "setMaxPlayers",
   SET_DEAD_VIEW_MODE: "setDeadViewMode",
   SKIP_DAY_DISCUSSION: "skipDayDiscussion",
+  END_LAST_WORDS: "endLastWords",
   START_CARD_PICKING: "startCardPicking",
   WEREWOLF_VOTE: "werewolfVote",
+  WEREWOLF_CONFIRM_VOTE: "werewolfConfirmVote",
+  WEREWOLF_UNCONFIRM_VOTE: "werewolfUnconfirmVote",
   SEER_CHECK: "seerCheck",
   WITCH_ACTION: "witchAction",
+  GUARD_PROTECT: "guardProtect",
+  HUNTER_SHOOT: "hunterShoot",
+  KNIGHT_DUEL: "knightDuel",
   DAY_VOTE: "dayVote",
   REQUEST_ROOM_STATE: "requestRoomState",
+  SET_OPTIONAL_ROLES: "setOptionalRoles",
 } as const;
 
 export type ClientEventName = (typeof CLIENT_EVENTS)[keyof typeof CLIENT_EVENTS];

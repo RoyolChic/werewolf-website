@@ -11,6 +11,7 @@ import {
   type SetDayDiscussionSecondsPayload,
   type SetDeadViewModePayload,
   type SetMaxPlayersPayload,
+  type SetOptionalRolesPayload,
   type SetWitchSelfSaveRulePayload,
   type StartCardPickingPayload,
 } from "@kill-wolf/shared";
@@ -41,6 +42,7 @@ export function registerRoomHandlers(io: Server, socket: Socket): void {
       witchSelfSaveRule: payload.witchSelfSaveRule,
       hostName: payload.hostName,
       socketId: socket.id,
+      optionalRoles: payload.optionalRoles,
     });
 
     if (!result.ok) {
@@ -141,6 +143,13 @@ export function registerRoomHandlers(io: Server, socket: Socket): void {
   socket.on(CLIENT_EVENTS.SET_MAX_PLAYERS, (payload: SetMaxPlayersPayload) => {
     withRoomAndPlayer(socket, payload?.roomId, (room, player) => {
       const result = roomService.setMaxPlayers(room, player.playerId, Number(payload?.maxPlayers));
+      if (!result.ok) emitError(socket, result.code, result.message);
+    });
+  });
+
+  socket.on(CLIENT_EVENTS.SET_OPTIONAL_ROLES, (payload: SetOptionalRolesPayload) => {
+    withRoomAndPlayer(socket, payload?.roomId, (room, player) => {
+      const result = roomService.setOptionalRoles(room, player.playerId, payload?.roles);
       if (!result.ok) emitError(socket, result.code, result.message);
     });
   });

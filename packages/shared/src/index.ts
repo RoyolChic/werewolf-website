@@ -10,6 +10,7 @@ export * from "./types/privateState";
 export * from "./constants/room";
 export * from "./constants/roles";
 export * from "./constants/phases";
+export * from "./constants/roleRules";
 
 export * from "./rules/roomConfigs";
 export * from "./rules/defaultSettings";

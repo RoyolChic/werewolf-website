@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CLIENT_EVENTS,
   DAY_DISCUSSION_SECONDS_MAX,
   DAY_DISCUSSION_SECONDS_MIN,
-  ROLE_COUNTS_BY_PLAYER_COUNT,
+  maxOptionalRolesForPlayerCount,
+  OPTIONAL_ROLES,
   ROLE_LABELS,
+  SUPPORTED_PLAYER_COUNTS,
+  type OptionalRole,
   type PublicRoomState,
   type WitchSelfSaveRule,
 } from "@kill-wolf/shared";
 import { useSocket } from "../../lib/socketContext";
+import { useAudio } from "../../lib/audio/audioContext";
 import { PlayerList } from "../../components/PlayerList";
 import { Button } from "../../components/Button";
 import { ShareRoomPanel } from "./ShareRoomPanel";
@@ -23,8 +27,24 @@ export function LobbyPage({ publicState, selfPlayerId, isHost }: LobbyPageProps)
   const [maxPlayers, setMaxPlayers] = useState(publicState.maxPlayers);
   const roomId = publicState.roomId;
   const socket = useSocket();
+  const { setLoopScene } = useAudio();
+
+  useEffect(() => {
+    setLoopScene("lobby");
+  }, [setLoopScene]);
 
   const roomFull = publicState.players.length === publicState.maxPlayers;
+  const selectedOptionalRoles = OPTIONAL_ROLES.filter((role) => publicState.roleCounts[role] > 0);
+  const maxOptionalRoles = maxOptionalRolesForPlayerCount(maxPlayers);
+
+  function toggleOptionalRole(role: OptionalRole) {
+    const isSelected = selectedOptionalRoles.includes(role);
+    if (!isSelected && selectedOptionalRoles.length >= maxOptionalRolesForPlayerCount(publicState.maxPlayers)) {
+      return;
+    }
+    const roles = isSelected ? selectedOptionalRoles.filter((r) => r !== role) : [...selectedOptionalRoles, role];
+    socket.emit(CLIENT_EVENTS.SET_OPTIONAL_ROLES, { roomId, roles });
+  }
 
   return (
     <div className="lobby-page">
@@ -61,7 +81,7 @@ export function LobbyPage({ publicState, selfPlayerId, isHost }: LobbyPageProps)
             <label className="field">
               <span>重新設定人數</span>
               <select value={maxPlayers} onChange={(e) => setMaxPlayers(Number(e.target.value))}>
-                {Object.keys(ROLE_COUNTS_BY_PLAYER_COUNT).map((count) => (
+                {SUPPORTED_PLAYER_COUNTS.map((count) => (
                   <option key={count} value={count}>
                     {count} 人
                   </option>
@@ -75,6 +95,25 @@ export function LobbyPage({ publicState, selfPlayerId, isHost }: LobbyPageProps)
             >
               套用人數變更
             </Button>
+
+            <div className="field">
+              <span>特殊角色（最多可加 {maxOptionalRoles} 個，會替換掉平民名額）</span>
+              <div className="optional-role-toggles">
+                {OPTIONAL_ROLES.map((role) => {
+                  const checked = selectedOptionalRoles.includes(role);
+                  const disabled = !checked && selectedOptionalRoles.length >= maxOptionalRoles;
+                  return (
+                    <label
+                      key={role}
+                      className={`optional-role-toggle ${disabled ? "optional-role-toggle-disabled" : ""}`}
+                    >
+                      <input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleOptionalRole(role)} />
+                      <span>{ROLE_LABELS[role]}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
 
             <label className="field">
               <span>白天發言秒數</span>

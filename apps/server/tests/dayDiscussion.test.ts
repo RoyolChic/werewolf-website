@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearAllRoomsForTest } from "../src/rooms/roomStore";
-import { dayVote, seerCheck, skipDayDiscussion, werewolfVote, witchAction } from "../src/game/engine";
+import { dayVote, seerCheck, skipDayDiscussion, witchAction } from "../src/game/engine";
 import {
   advanceThroughAnnouncementToDiscussion,
   advanceThroughExileToNextNight,
+  confirmWerewolfKill,
   playersWithRole,
   setupNightReadyRoom,
   skipAllSpeakingTurns,
@@ -22,7 +23,7 @@ afterEach(() => {
 function reachDay1Discussion(room: Room): void {
   const wolves = playersWithRole(room, "WEREWOLF");
   const villagers = playersWithRole(room, "VILLAGER");
-  wolves.forEach((wolfId) => werewolfVote(room, wolfId, villagers[0]));
+  confirmWerewolfKill(room, wolves, villagers[0]);
   const seerId = playersWithRole(room, "SEER")[0];
   seerCheck(room, seerId, villagers[1]);
   const witchId = playersWithRole(room, "WITCH")[0];
@@ -107,14 +108,14 @@ describe("day discussion speaking order", () => {
     expect(room.gameState.phase).toBe("DAY_EXILE_RESULT");
     expect(room.gameState.exileResult?.exiledPlayerId).toBe(exileTarget);
 
-    advanceThroughExileToNextNight();
+    advanceThroughExileToNextNight(room);
     expect(room.gameState.phase).toBe("NIGHT_WEREWOLF");
 
     // Resolve night 2 with nobody dying (the witch saves the target), so the exile from day 1
     // remains the most recent removal and thus the anchor for day 2's speaking order.
     const wolves = playersWithRole(room, "WEREWOLF");
     const remainingVillagers = playersWithRole(room, "VILLAGER").filter((id) => room.players.get(id)!.isAlive);
-    wolves.forEach((wolfId) => werewolfVote(room, wolfId, remainingVillagers[0]));
+    confirmWerewolfKill(room, wolves, remainingVillagers[0]);
     const seerId = playersWithRole(room, "SEER")[0];
     if (room.players.get(seerId)?.isAlive) {
       seerCheck(room, seerId, remainingVillagers[1] ?? remainingVillagers[0]);

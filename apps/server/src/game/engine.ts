@@ -1,8 +1,17 @@
 import { roleFaction } from "@kill-wolf/shared";
 import type { Room } from "../rooms/roomTypes";
 import { pickRandom } from "../utils/random";
-import { advanceToNextSpeakerOrVote, alivePlayers, aliveWerewolves, enterPhase } from "./phases";
+import {
+  advanceToNextSpeakerOrVote,
+  alivePlayers,
+  aliveWerewolves,
+  enterPhase,
+  finishLastWords,
+  markLastRemoved,
+  resolveHunterShoot,
+} from "./phases";
 import { createShuffledCards } from "./roleAssignment";
+import { checkRoomWinner } from "./winConditions";
 
 export interface ActionOutcome {
   ok: boolean;
@@ -123,6 +132,111 @@ export function confirmRole(room: Room, playerId: string): ActionOutcome {
   return ok();
 }
 
+export function guardProtect(room: Room, playerId: string, targetPlayerId: string): ActionOutcome {
+  if (room.gameState.phase !== "NIGHT_GUARD") {
+    return fail("INVALID_PHASE", "目前不是守衛行動階段");
+  }
+  const player = room.players.get(playerId);
+  const target = room.players.get(targetPlayerId);
+  if (!player || player.role !== "GUARD" || !player.isAlive) {
+    return fail("FORBIDDEN", "非守衛或已死亡");
+  }
+  if (!target || !target.isAlive) {
+    return fail("INVALID_TARGET", "目標必須是存活玩家");
+  }
+  if (room.gameState.nightGuardedPlayerId !== null) {
+    return fail("ALREADY_ACTED", "本晚已行動");
+  }
+  if (room.gameState.lastGuardedPlayerId === targetPlayerId) {
+    return fail("SAME_TARGET_AS_LAST_NIGHT", "不能連續兩晚守護同一人");
+  }
+
+  room.gameState.nightGuardedPlayerId = targetPlayerId;
+  enterPhase(room, "NIGHT_WEREWOLF");
+  return ok();
+}
+
+export function hunterShoot(room: Room, playerId: string, targetPlayerId: string | null): ActionOutcome {
+  if (room.gameState.phase !== "HUNTER_SHOOT") {
+    return fail("INVALID_PHASE", "目前不是獵人開槍階段");
+  }
+  if (room.gameState.pendingHunterShooterPlayerId !== playerId) {
+    return fail("FORBIDDEN", "現在不是你開槍的時機");
+  }
+  if (targetPlayerId !== null) {
+    const target = room.players.get(targetPlayerId);
+    if (!target || !target.isAlive) {
+      return fail("INVALID_TARGET", "目標必須是存活玩家");
+    }
+  }
+
+  resolveHunterShoot(room, targetPlayerId);
+  return ok();
+}
+
+const KNIGHT_DUEL_PHASES = new Set(["DAY_DISCUSSION", "DAY_TIEBREAK_DISCUSSION", "DAY_VOTE"]);
+
+export function knightDuel(room: Room, playerId: string, targetPlayerId: string): ActionOutcome {
+  if (!KNIGHT_DUEL_PHASES.has(room.gameState.phase)) {
+    return fail("INVALID_PHASE", "目前不能發動決鬥");
+  }
+  const player = room.players.get(playerId);
+  if (!player || player.role !== "KNIGHT" || !player.isAlive) {
+    return fail("FORBIDDEN", "非騎士或已死亡");
+  }
+  if (room.gameState.knightDuelUsed) {
+    return fail("ALREADY_USED", "決鬥已經使用過");
+  }
+  if (targetPlayerId === playerId) {
+    return fail("INVALID_TARGET", "不能與自己決鬥");
+  }
+  const target = room.players.get(targetPlayerId);
+  if (!target || !target.isAlive) {
+    return fail("INVALID_TARGET", "目標必須是存活玩家");
+  }
+
+  room.gameState.knightDuelUsed = true;
+  room.gameState.revealedPlayerIds.add(playerId);
+
+  if (target.role === "WEREWOLF") {
+    target.isAlive = false;
+    markLastRemoved(room, targetPlayerId);
+  } else {
+    player.isAlive = false;
+    markLastRemoved(room, playerId);
+  }
+
+  const winner = checkRoomWinner(room);
+  if (winner) {
+    room.gameState.winner = winner;
+    enterPhase(room, "GAME_OVER");
+    return ok();
+  }
+  // The duel's outcome is dramatic enough that the rest of the day (discussion/voting) is
+  // skipped entirely -- night falls right after.
+  enterPhase(room, "NIGHT_START");
+  return ok();
+}
+
+/**
+ * Tallies whatever targets are currently in werewolfVotes (confirmed or not) and sets
+ * nightKillTargetPlayerId by majority, breaking ties at random. Shared by the "everyone
+ * confirmed" path and the night-action-timeout fallback. A no-op if nobody voted at all.
+ */
+export function resolveWerewolfKillTarget(room: Room): void {
+  if (room.gameState.werewolfVotes.size === 0) {
+    return;
+  }
+  const tally = new Map<string, number>();
+  for (const targetId of room.gameState.werewolfVotes.values()) {
+    tally.set(targetId, (tally.get(targetId) ?? 0) + 1);
+  }
+  const topCount = Math.max(...tally.values());
+  const topCandidates = [...tally.entries()].filter(([, c]) => c === topCount).map(([id]) => id);
+  room.gameState.nightKillTargetPlayerId =
+    topCandidates.length === 1 ? topCandidates[0] : pickRandom(topCandidates);
+}
+
 export function werewolfVote(room: Room, playerId: string, targetPlayerId: string): ActionOutcome {
   if (room.gameState.phase !== "NIGHT_WEREWOLF") {
     return fail("INVALID_PHASE", "目前不是狼人行動階段");
@@ -135,24 +249,54 @@ export function werewolfVote(room: Room, playerId: string, targetPlayerId: strin
   if (!target || !target.isAlive) {
     return fail("INVALID_TARGET", "目標必須是存活玩家");
   }
-  if (room.gameState.werewolfVotes.has(playerId)) {
-    return fail("ALREADY_VOTED", "已投票");
+  if (room.gameState.werewolfConfirmedPlayerIds.has(playerId)) {
+    return fail("ALREADY_CONFIRMED", "已確認目標，請先取消確認");
   }
 
   room.gameState.werewolfVotes.set(playerId, targetPlayerId);
 
+  return ok();
+}
+
+export function werewolfConfirmVote(room: Room, playerId: string): ActionOutcome {
+  if (room.gameState.phase !== "NIGHT_WEREWOLF") {
+    return fail("INVALID_PHASE", "目前不是狼人行動階段");
+  }
+  const player = room.players.get(playerId);
+  if (!player || player.role !== "WEREWOLF" || !player.isAlive) {
+    return fail("FORBIDDEN", "非狼人或已死亡");
+  }
+  if (!room.gameState.werewolfVotes.has(playerId)) {
+    return fail("NO_TARGET", "請先選擇目標");
+  }
+  if (room.gameState.werewolfConfirmedPlayerIds.has(playerId)) {
+    return fail("ALREADY_CONFIRMED", "已確認過");
+  }
+
+  room.gameState.werewolfConfirmedPlayerIds.add(playerId);
+
   const wolves = aliveWerewolves(room);
-  if (room.gameState.werewolfVotes.size === wolves.length) {
-    const tally = new Map<string, number>();
-    for (const targetId of room.gameState.werewolfVotes.values()) {
-      tally.set(targetId, (tally.get(targetId) ?? 0) + 1);
-    }
-    const topCount = Math.max(...tally.values());
-    const topCandidates = [...tally.entries()].filter(([, c]) => c === topCount).map(([id]) => id);
-    room.gameState.nightKillTargetPlayerId =
-      topCandidates.length === 1 ? topCandidates[0] : pickRandom(topCandidates);
+  if (room.gameState.werewolfConfirmedPlayerIds.size === wolves.length) {
+    resolveWerewolfKillTarget(room);
     enterPhase(room, "NIGHT_SEER");
   }
+
+  return ok();
+}
+
+export function werewolfUnconfirmVote(room: Room, playerId: string): ActionOutcome {
+  if (room.gameState.phase !== "NIGHT_WEREWOLF") {
+    return fail("INVALID_PHASE", "目前不是狼人行動階段");
+  }
+  const player = room.players.get(playerId);
+  if (!player || player.role !== "WEREWOLF" || !player.isAlive) {
+    return fail("FORBIDDEN", "非狼人或已死亡");
+  }
+  if (!room.gameState.werewolfConfirmedPlayerIds.has(playerId)) {
+    return fail("NOT_CONFIRMED", "尚未確認");
+  }
+
+  room.gameState.werewolfConfirmedPlayerIds.delete(playerId);
 
   return ok();
 }
@@ -252,7 +396,7 @@ export function witchAction(
 }
 
 export function skipDayDiscussion(room: Room, playerId: string): ActionOutcome {
-  if (room.gameState.phase !== "DAY_DISCUSSION") {
+  if (room.gameState.phase !== "DAY_DISCUSSION" && room.gameState.phase !== "DAY_TIEBREAK_DISCUSSION") {
     return fail("INVALID_PHASE", "目前不是白天討論階段");
   }
   const player = room.players.get(playerId);
@@ -269,11 +413,37 @@ export function skipDayDiscussion(room: Room, playerId: string): ActionOutcome {
   return ok();
 }
 
+export function endLastWords(room: Room, playerId: string): ActionOutcome {
+  if (room.gameState.phase !== "DAY_LAST_WORDS") {
+    return fail("INVALID_PHASE", "目前不是遺言階段");
+  }
+  // Deliberately no isAlive check -- the last-words speaker just died (exiled, or shot by the
+  // hunter that got exiled), that's what makes them eligible for this in the first place.
+  if (playerId !== room.gameState.lastWordsPlayerId) {
+    return fail("NOT_YOUR_TURN", "現在不是你的遺言時間");
+  }
+
+  finishLastWords(room);
+
+  return ok();
+}
+
 function finalizeExile(room: Room, exiledPlayerId: string | null, round: 1 | 2): void {
+  const votes: Record<string, string | null> = {};
+  for (const [voterId, targetId] of room.gameState.dayVotes) {
+    votes[voterId] = targetId;
+  }
+  room.gameState.voteHistory.push({ day: room.gameState.dayNumber, round, votes, exiledPlayerId });
   room.gameState.exileResult = { round, exiledPlayerId };
   enterPhase(room, "DAY_EXILE_RESULT");
 }
 
+/**
+ * Same tally-and-decide logic for every day, day 1 included: whoever has the most votes leaves,
+ * no majority required. A tie sends the tied candidates through one more round of speaking
+ * (DAY_TIEBREAK_DISCUSSION) before a round-2 revote among just them; a tie on that revote skips
+ * the exile entirely and the game moves on to night.
+ */
 function handleAllDayVotesIn(room: Room): void {
   const { gameState } = room;
   const tally = new Map<string, number>();
@@ -281,21 +451,6 @@ function handleAllDayVotesIn(room: Room): void {
     if (targetId) {
       tally.set(targetId, (tally.get(targetId) ?? 0) + 1);
     }
-  }
-  const aliveCount = alivePlayers(room).length;
-
-  if (gameState.dayNumber === 1) {
-    let topId: string | null = null;
-    let topCount = 0;
-    for (const [id, count] of tally) {
-      if (count > topCount) {
-        topCount = count;
-        topId = id;
-      }
-    }
-    const exiledPlayerId = topId && topCount * 2 > aliveCount ? topId : null;
-    finalizeExile(room, exiledPlayerId, 1);
-    return;
   }
 
   if (tally.size === 0) {
@@ -315,6 +470,7 @@ function handleAllDayVotesIn(room: Room): void {
     gameState.voteRound = 2;
     gameState.voteRunoffCandidateIds = topCandidates;
     gameState.dayVotes.clear();
+    enterPhase(room, "DAY_TIEBREAK_DISCUSSION");
     return;
   }
 

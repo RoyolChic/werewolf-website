@@ -1,7 +1,15 @@
 import { vi } from "vitest";
-import type { WitchSelfSaveRule } from "@kill-wolf/shared";
+import { LAST_WORDS_SECONDS, NIGHT_ACTION_SECONDS, type OptionalRole, type WitchSelfSaveRule } from "@kill-wolf/shared";
 import { createRoomAndJoin, joinRoom } from "../src/rooms/roomService";
-import { confirmCard, confirmRole, dayVote, skipDayDiscussion, startCardPicking } from "../src/game/engine";
+import {
+  confirmCard,
+  confirmRole,
+  dayVote,
+  skipDayDiscussion,
+  startCardPicking,
+  werewolfConfirmVote,
+  werewolfVote,
+} from "../src/game/engine";
 import type { Room } from "../src/rooms/roomTypes";
 
 export interface TestRoom {
@@ -9,9 +17,15 @@ export interface TestRoom {
   playerIds: string[];
 }
 
+/** How long it takes NIGHT_GUARD or HUNTER_SHOOT to auto-resolve when nobody acts in them. */
+const NIGHT_ACTION_TIMEOUT_MS = NIGHT_ACTION_SECONDS * 1000 + 100;
+/** How long it takes DAY_LAST_WORDS to auto-resolve when nobody ends it early. */
+const LAST_WORDS_TIMEOUT_MS = LAST_WORDS_SECONDS * 1000 + 100;
+
 export function createTestRoom(
   playerCount: number,
   witchSelfSaveRule: WitchSelfSaveRule = "FIRST_NIGHT_ONLY",
+  optionalRoles: OptionalRole[] = [],
 ): TestRoom {
   const hostResult = createRoomAndJoin({
     maxPlayers: playerCount,
@@ -19,6 +33,7 @@ export function createTestRoom(
     witchSelfSaveRule,
     hostName: "P1",
     socketId: "socket-1",
+    optionalRoles,
   });
   if (!hostResult.ok) {
     throw new Error(`failed to create room: ${hostResult.message}`);
@@ -59,16 +74,48 @@ export function confirmAllRolesAndStartNight(room: Room, playerIds: string[]): v
       throw new Error(`failed to confirm role: ${outcome.message}`);
     }
   }
-  vi.advanceTimersByTime(1500);
+  vi.advanceTimersByTime(1500); // NIGHT_START -> NIGHT_GUARD
+  // NIGHT_GUARD skips straight through when nobody was dealt the guard card (see phases.ts), so
+  // only games that actually have a guard need fast-forwarding through its full timer to land in
+  // NIGHT_WEREWOLF.
+  const hasGuardInGame = [...room.players.values()].some((p) => p.role === "GUARD");
+  if (hasGuardInGame) {
+    vi.advanceTimersByTime(NIGHT_ACTION_TIMEOUT_MS);
+  }
 }
 
 export function setupNightReadyRoom(
   playerCount: number,
   witchSelfSaveRule: WitchSelfSaveRule = "FIRST_NIGHT_ONLY",
+  optionalRoles: OptionalRole[] = [],
 ): TestRoom {
-  const { room, playerIds } = createTestRoom(playerCount, witchSelfSaveRule);
+  const { room, playerIds } = createTestRoom(playerCount, witchSelfSaveRule, optionalRoles);
   completeCardPickingAndReveal(room, playerIds);
   confirmAllRolesAndStartNight(room, playerIds);
+  return { room, playerIds };
+}
+
+/**
+ * Like setupNightReadyRoom, but stops right at NIGHT_GUARD instead of fast-forwarding past it --
+ * for tests that need to actually drive the guard's action.
+ */
+export function setupGuardReadyRoom(
+  playerCount: number,
+  optionalRoles: OptionalRole[],
+  witchSelfSaveRule: WitchSelfSaveRule = "FIRST_NIGHT_ONLY",
+): TestRoom {
+  const { room, playerIds } = createTestRoom(playerCount, witchSelfSaveRule, optionalRoles);
+  completeCardPickingAndReveal(room, playerIds);
+  for (const playerId of playerIds) {
+    const outcome = confirmRole(room, playerId);
+    if (!outcome.ok) {
+      throw new Error(`failed to confirm role: ${outcome.message}`);
+    }
+  }
+  // Exactly 1200ms, not a moment more -- NIGHT_START's transition into NIGHT_GUARD fires at
+  // exactly 1200ms and immediately starts NIGHT_GUARD's own 60s timer; advancing any further
+  // here would eat into that timer's budget before the test gets to it.
+  vi.advanceTimersByTime(1200);
   return { room, playerIds };
 }
 
@@ -76,14 +123,41 @@ export function playersWithRole(room: Room, role: string): string[] {
   return [...room.players.values()].filter((p) => p.role === role).map((p) => p.playerId);
 }
 
+/**
+ * Drives the full select-then-confirm werewolf flow for every given wolf against the same
+ * target, mirroring how the client now has to do it in two steps instead of one atomic vote.
+ */
+export function confirmWerewolfKill(room: Room, wolfIds: string[], targetPlayerId: string): void {
+  for (const wolfId of wolfIds) {
+    const outcome = werewolfVote(room, wolfId, targetPlayerId);
+    if (!outcome.ok) {
+      throw new Error(`failed to select werewolf target: ${outcome.message}`);
+    }
+  }
+  for (const wolfId of wolfIds) {
+    const outcome = werewolfConfirmVote(room, wolfId);
+    if (!outcome.ok) {
+      throw new Error(`failed to confirm werewolf vote: ${outcome.message}`);
+    }
+  }
+}
+
 export function advanceThroughAnnouncementToDiscussion(): void {
   vi.advanceTimersByTime(3500);
 }
 
-export function advanceThroughExileToNextNight(): void {
-  // DAY_EXILE_RESULT -> NIGHT_START is a 3000ms hop, and NIGHT_START itself schedules another
-  // 1200ms hop into NIGHT_WEREWOLF; advance far enough to flush both chained timers.
-  vi.advanceTimersByTime(4500);
+export function advanceThroughExileToNextNight(room: Room): void {
+  // DAY_EXILE_RESULT -> DAY_LAST_WORDS (or straight to NIGHT_START if nobody was actually
+  // exiled) is a 3000ms hop; DAY_LAST_WORDS only needs its own full timeout flushed on top of
+  // that when someone was actually exiled and thus has last words to (not) give. From there,
+  // NIGHT_START schedules another 1200ms hop into NIGHT_GUARD, which in turn only needs its own
+  // full timeout flushed when this game actually has a guard to wait on (see phases.ts) --
+  // otherwise each of these falls straight through to the next phase already.
+  const wasExiled = room.gameState.exileResult?.exiledPlayerId != null;
+  const hasGuardInGame = [...room.players.values()].some((p) => p.role === "GUARD");
+  vi.advanceTimersByTime(
+    4500 + (wasExiled ? LAST_WORDS_TIMEOUT_MS : 0) + (hasGuardInGame ? NIGHT_ACTION_TIMEOUT_MS : 0),
+  );
 }
 
 /**
@@ -105,14 +179,17 @@ export function skipWholeDayIntoNextNight(room: Room): void {
   }
   expect_(room.gameState.phase === "DAY_EXILE_RESULT", "expected DAY_EXILE_RESULT after all abstain");
 
-  advanceThroughExileToNextNight();
+  advanceThroughExileToNextNight(room);
   expect_(room.gameState.phase === "NIGHT_WEREWOLF", "expected NIGHT_WEREWOLF at the start of the next night");
 }
 
-/** Skips every alive player's speaking turn in order, driving DAY_DISCUSSION through to DAY_VOTE. */
+/**
+ * Skips every speaker's turn in order, driving either DAY_DISCUSSION or DAY_TIEBREAK_DISCUSSION
+ * through to DAY_VOTE.
+ */
 export function skipAllSpeakingTurns(room: Room): void {
   let guard = 0;
-  while (room.gameState.phase === "DAY_DISCUSSION") {
+  while (room.gameState.phase === "DAY_DISCUSSION" || room.gameState.phase === "DAY_TIEBREAK_DISCUSSION") {
     const currentSpeakerId = room.gameState.discussionSpeakingOrder[room.gameState.currentSpeakerIndex];
     if (!currentSpeakerId) break;
     const outcome = skipDayDiscussion(room, currentSpeakerId);

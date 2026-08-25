@@ -4,15 +4,24 @@ import {
   getRoleCountsForPlayerCount,
   isSameName,
   isValidPlayerCount,
+  sanitizeOptionalRoles,
   validatePlayerName,
   type DeadViewMode,
+  type OptionalRole,
   type WitchSelfSaveRule,
 } from "@kill-wolf/shared";
 import { createRoom as storeCreateRoom, deleteRoom, getRoom } from "./roomStore";
 import type { Player, Room } from "./roomTypes";
 import { createToken } from "../utils/random";
 import { createShuffledCards } from "../game/roleAssignment";
-import { pauseDiscussionTimerIfRunning, resumeDiscussionTimerIfPaused } from "../game/timers";
+import {
+  pauseDiscussionTimerIfRunning,
+  pauseLastWordsTimerIfRunning,
+  pauseNightActionTimerIfRunning,
+  resumeDiscussionTimerIfPaused,
+  resumeLastWordsTimerIfPaused,
+  resumeNightActionTimerIfPaused,
+} from "../game/timers";
 
 export interface ServiceFailure {
   ok: false;
@@ -50,6 +59,7 @@ export interface CreateRoomInput {
   witchSelfSaveRule: WitchSelfSaveRule;
   hostName: string;
   socketId: string;
+  optionalRoles?: OptionalRole[];
 }
 
 export type CreateRoomSuccess = {
@@ -67,7 +77,8 @@ export function createRoomAndJoin(input: CreateRoomInput): CreateRoomSuccess | S
     return fail("INVALID_NAME", "名稱格式不正確");
   }
 
-  const config = createDefaultRoomConfig(input.maxPlayers);
+  const optionalRoles = sanitizeOptionalRoles(input.optionalRoles, input.maxPlayers);
+  const config = createDefaultRoomConfig(input.maxPlayers, optionalRoles);
   config.dayDiscussionSeconds = clampDayDiscussionSeconds(input.dayDiscussionSeconds);
   config.witchSelfSaveRule = input.witchSelfSaveRule;
 
@@ -140,6 +151,8 @@ export function joinRoom(input: JoinRoomInput): JoinRoomSuccess | JoinRoomNeedsC
       matchedPlayer.reconnectToken = createToken();
       if (allAlivePlayersConnected(room)) {
         resumeDiscussionTimerIfPaused(room);
+        resumeNightActionTimerIfPaused(room);
+        resumeLastWordsTimerIfPaused(room);
       }
       return { ok: true, kind: "RECONNECTED", room, player: matchedPlayer, supersededSocketId };
     }
@@ -189,6 +202,8 @@ export function confirmReconnect(
   offlinePlayer.reconnectToken = createToken();
   if (allAlivePlayersConnected(room)) {
     resumeDiscussionTimerIfPaused(room);
+    resumeNightActionTimerIfPaused(room);
+    resumeLastWordsTimerIfPaused(room);
   }
   return { ok: true, kind: "RECONNECTED", room, player: offlinePlayer };
 }
@@ -237,6 +252,8 @@ export function leaveRoom(room: Room, playerId: string): ServiceFailure | { ok: 
     player.socketId = null;
     if (player.isAlive) {
       pauseDiscussionTimerIfRunning(room);
+      pauseNightActionTimerIfRunning(room);
+      pauseLastWordsTimerIfRunning(room);
     }
   }
 
@@ -280,7 +297,8 @@ export function setMaxPlayers(room: Room, requesterPlayerId: string, maxPlayers:
   }
 
   room.maxPlayers = maxPlayers;
-  room.roleCounts = getRoleCountsForPlayerCount(maxPlayers);
+  room.optionalRoles = sanitizeOptionalRoles(room.optionalRoles, maxPlayers);
+  room.roleCounts = getRoleCountsForPlayerCount(maxPlayers, room.optionalRoles);
 
   if (room.gameState.phase === "CARD_PICKING") {
     for (const player of room.players.values()) {
@@ -289,6 +307,20 @@ export function setMaxPlayers(room: Room, requesterPlayerId: string, maxPlayers:
     }
     room.cards = createShuffledCards(room.roleCounts);
   }
+
+  return { ok: true };
+}
+
+export function setOptionalRoles(room: Room, requesterPlayerId: string, roles: unknown): ServiceFailure | { ok: true } {
+  if (requesterPlayerId !== room.hostPlayerId) {
+    return fail("NOT_HOST", "只有房主可以設定角色");
+  }
+  if (room.gameState.phase !== "LOBBY") {
+    return fail("INVALID_PHASE", "只能在等待房階段設定角色");
+  }
+
+  room.optionalRoles = sanitizeOptionalRoles(roles, room.maxPlayers);
+  room.roleCounts = getRoleCountsForPlayerCount(room.maxPlayers, room.optionalRoles);
 
   return { ok: true };
 }
@@ -340,6 +372,8 @@ export function disconnectPlayerBySocketId(socketId: string, room: Room): Player
   maybeTransferHost(room);
   if (player.isAlive) {
     pauseDiscussionTimerIfRunning(room);
+    pauseNightActionTimerIfRunning(room);
+    pauseLastWordsTimerIfRunning(room);
   }
   return player;
 }

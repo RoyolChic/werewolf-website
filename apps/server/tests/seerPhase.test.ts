@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NIGHT_ACTION_SECONDS } from "@kill-wolf/shared";
 import { clearAllRoomsForTest } from "../src/rooms/roomStore";
-import { seerCheck, werewolfVote } from "../src/game/engine";
-import { playersWithRole, setupNightReadyRoom } from "./helpers";
+import { seerCheck } from "../src/game/engine";
+import { confirmWerewolfKill, playersWithRole, setupNightReadyRoom } from "./helpers";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -15,7 +16,7 @@ afterEach(() => {
 function advanceToSeerPhase(room: ReturnType<typeof setupNightReadyRoom>["room"]) {
   const wolves = playersWithRole(room, "WEREWOLF");
   const target = [...room.players.keys()].find((id) => !wolves.includes(id))!;
-  wolves.forEach((wolfId) => werewolfVote(room, wolfId, target));
+  confirmWerewolfKill(room, wolves, target);
 }
 
 describe("seer night phase", () => {
@@ -67,5 +68,32 @@ describe("seer night phase", () => {
     // "already acted" guard -- both are valid proof that only one check is possible per night.
     const second = seerCheck(room, seerId, targets[1]);
     expect(second.ok).toBe(false);
+  });
+
+  it("skips the check and advances to NIGHT_WITCH once the 60s clock runs out", () => {
+    const { room } = setupNightReadyRoom(6);
+    advanceToSeerPhase(room);
+    expect(room.gameState.phase).toBe("NIGHT_SEER");
+
+    vi.advanceTimersByTime(NIGHT_ACTION_SECONDS * 1000 + 100);
+
+    expect(room.gameState.phase).toBe("NIGHT_WITCH");
+    expect(room.gameState.seerChecks).toHaveLength(0);
+  });
+
+  it("still runs the full timer when the seer is already dead, instead of skipping instantly", () => {
+    const { room } = setupNightReadyRoom(6);
+    const wolves = playersWithRole(room, "WEREWOLF");
+    const seerId = playersWithRole(room, "SEER")[0];
+    room.players.get(seerId)!.isAlive = false;
+    const target = [...room.players.keys()].find((id) => !wolves.includes(id) && id !== seerId)!;
+    confirmWerewolfKill(room, wolves, target);
+
+    expect(room.gameState.phase).toBe("NIGHT_SEER");
+    vi.advanceTimersByTime(NIGHT_ACTION_SECONDS * 1000 - 100);
+    expect(room.gameState.phase).toBe("NIGHT_SEER");
+
+    vi.advanceTimersByTime(200);
+    expect(room.gameState.phase).toBe("NIGHT_WITCH");
   });
 });
