@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: kill-wolf-server
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run start --workspace apps/server
+    envVars:
+      - key: CLIENT_ORIGIN
+        sync: false
