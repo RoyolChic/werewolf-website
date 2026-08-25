@@ -1,0 +1,610 @@
+{
+  "version": "0.3-audio-production",
+  "source_spec": "werewolf_audio_spec_v0.2(2).md",
+  "narrator": {
+    "voice_style": "deep",
+    "approved": true,
+    "prosody_rule": "Preserve v0.2 wording; insert line breaks only for performance pauses. Role name and instruction are separate rhythm units.",
+    "note": "User approved final audition. Text content remains v0.2."
+  },
+  "assets": {
+    "voice.game.start": {
+      "file": "narration/narration_game_start_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "GAME_STARTING",
+      "text": "遊戲，開始。",
+      "generation_transcript": "遊戲，\n開始。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/0e9fafcd-4782-404d-8336-c94cf69be53d.mp3",
+      "priority": "P0"
+    },
+    "voice.night.atmosphere": {
+      "file": "narration/narration_night_atmosphere_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "NIGHT_ENTER",
+      "text": "最後一盞燈熄滅了。",
+      "generation_transcript": "最後一盞燈熄滅了。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/0ac43184-7b6f-4e7b-a98d-446f129cd9b7.mp3",
+      "priority": "P0"
+    },
+    "voice.night.close_eyes": {
+      "file": "narration/narration_night_close_eyes_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "NIGHT_ENTER",
+      "text": "天黑請閉眼。",
+      "generation_transcript": "天黑，\n請閉眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/664d4229-a1f3-485b-89d9-d93203357642.mp3",
+      "priority": "P0"
+    },
+    "voice.wolf.open": {
+      "file": "narration/narration_wolf_open_01.ogg",
+      "category": "narration",
+      "scope": "team_private",
+      "trigger": "ROLE_WOLF_ENTER",
+      "text": "狼人，請睜眼。",
+      "generation_transcript": "狼人，\n請睜眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/96f22092-1065-42c6-8f0f-79bae52bd8ef.mp3",
+      "priority": "P0"
+    },
+    "voice.wolf.choose": {
+      "file": "narration/narration_wolf_choose_01.ogg",
+      "category": "narration",
+      "scope": "team_private",
+      "trigger": "ROLE_WOLF_ENTER",
+      "text": "選擇今晚要襲擊的目標。",
+      "generation_transcript": "選擇今晚要襲擊的目標。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/3ab3ade9-34c4-46fc-bb45-23a3181834b0.mp3",
+      "priority": "P0"
+    },
+    "voice.wolf.close": {
+      "file": "narration/narration_wolf_close_01.ogg",
+      "category": "narration",
+      "scope": "team_private",
+      "trigger": "ROLE_WOLF_ENTER",
+      "text": "狼人，請閉眼。",
+      "generation_transcript": "狼人，\n請閉眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/d970a4d8-1818-4014-9c67-68da4f2044a2.mp3",
+      "priority": "P0"
+    },
+    "voice.guard.open": {
+      "file": "narration/narration_guard_open_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_GUARD_ENTER",
+      "text": "守衛，請睜眼。",
+      "generation_transcript": "守衛，\n請睜眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/b3b5806e-d39c-4471-9427-2d6f81fa4874.mp3",
+      "priority": "P0"
+    },
+    "voice.guard.choose": {
+      "file": "narration/narration_guard_choose_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_GUARD_ENTER",
+      "text": "選擇今晚要守護的人。",
+      "generation_transcript": "選擇今晚要守護的人。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/7f79dedd-2be6-4db5-8b80-2132ffb6ec19.mp3",
+      "priority": "P0"
+    },
+    "voice.guard.close": {
+      "file": "narration/narration_guard_close_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_GUARD_ENTER",
+      "text": "守衛，請閉眼。",
+      "generation_transcript": "守衛，\n請閉眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/b303b530-5e33-4880-907e-e6a0e88f4621.mp3",
+      "priority": "P0"
+    },
+    "voice.seer.open": {
+      "file": "narration/narration_seer_open_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_SEER_ENTER",
+      "text": "預言家，請睜眼。",
+      "generation_transcript": "預言家，\n請睜眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/31fc67d7-b982-4122-b877-f1ddcfeb7ecd.mp3",
+      "priority": "P0"
+    },
+    "voice.seer.choose": {
+      "file": "narration/narration_seer_choose_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_SEER_ENTER",
+      "text": "選擇你想查驗的人。他的身分是...。",
+      "generation_transcript": "選擇你想查驗的人。\n他的身分是...。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/f21a9dc8-ee91-42d9-b7ed-77e647d9e037.mp3",
+      "priority": "P0"
+    },
+    "voice.seer.close": {
+      "file": "narration/narration_seer_close_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_SEER_ENTER",
+      "text": "預言家，請閉眼。",
+      "generation_transcript": "預言家，\n請閉眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/e475b9c5-168f-4055-934a-b6ca8bb19382.mp3",
+      "priority": "P0"
+    },
+    "voice.witch.open": {
+      "file": "narration/narration_witch_open_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_WITCH_ENTER",
+      "text": "女巫，請睜眼。",
+      "generation_transcript": "女巫，\n請睜眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/b4982bc5-9533-4f00-be6c-18aff001574b.mp3",
+      "priority": "P0"
+    },
+    "voice.witch.victim_exists": {
+      "file": "narration/narration_witch_victim_exists_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_WITCH_ENTER",
+      "text": "今晚，他被殺了。妳要使用解藥嗎? 妳要使用毒藥嗎?",
+      "generation_transcript": "今晚，\n他被殺了。\n妳要使用解藥嗎?\n妳要使用毒藥嗎?",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/1a22cde8-e9f8-4ffb-b454-c7170d5329a5.mp3",
+      "priority": "P0"
+    },
+    "voice.witch.close": {
+      "file": "narration/narration_witch_close_01.ogg",
+      "category": "narration",
+      "scope": "player_private",
+      "trigger": "ROLE_WITCH_ENTER",
+      "text": "女巫，請閉眼。",
+      "generation_transcript": "女巫，\n請閉眼。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/92a9d13b-340b-46e7-a727-a23893cc08b1.mp3",
+      "priority": "P0"
+    },
+    "voice.day.atmosphere": {
+      "file": "narration/narration_day_atmosphere_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "DAWN_ENTER",
+      "text": "鐘聲響起，新的一天開始了。",
+      "generation_transcript": "鐘聲響起，\n新的一天開始了。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/7b0877ae-1bdd-497f-b3d6-c65406402eac.mp3",
+      "priority": "P0"
+    },
+    "voice.day.open_eyes": {
+      "file": "narration/narration_day_open_eyes_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "DAWN_ENTER",
+      "text": "天亮了。",
+      "generation_transcript": "天亮了。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/513c23bd-c0b5-418b-8e63-0c50e9a81e6c.mp3",
+      "priority": "P0"
+    },
+    "voice.result.no_death": {
+      "file": "narration/narration_result_no_death_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "NIGHT_RESULT_NONE",
+      "text": "昨夜，無人死亡。",
+      "generation_transcript": "昨夜，\n無人死亡。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/35f92256-2f32-4fce-9ea9-a3c25ae9e9bb.mp3",
+      "priority": "P0"
+    },
+    "voice.discussion.start": {
+      "file": "narration/narration_discussion_start_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "DISCUSSION_ENTER",
+      "text": "現在，開始發言。",
+      "generation_transcript": "現在，\n開始發言。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/34448a12-2021-4458-a7de-5f76e836668a.mp3",
+      "priority": "P0"
+    },
+    "voice.vote.start": {
+      "file": "narration/narration_vote_start_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "VOTING_ENTER",
+      "text": "請做出你的選擇。",
+      "generation_transcript": "請做出你的選擇。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/1c96cd79-6ed3-4f63-8703-9f57079d6200.mp3",
+      "priority": "P0"
+    },
+    "voice.last_words.start": {
+      "file": "narration/narration_last_words_start_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "LAST_WORDS_ENTER",
+      "text": "請留下最後的話。",
+      "generation_transcript": "請留下最後的話。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/2689dcfe-6aa3-4b32-8a2f-7fbfdd530495.mp3",
+      "priority": "P0"
+    },
+    "voice.result.village_win": {
+      "file": "narration/narration_result_village_win_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "GAME_RESULT_VILLAGE",
+      "text": "狼人的蹤跡消失了。村莊迎來了黎明，好人勝利。",
+      "generation_transcript": "狼人的蹤跡消失了。\n村莊迎來了黎明，\n好人勝利。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/45f0db56-d616-4dcf-bff7-e4d727608522.mp3",
+      "priority": "P0"
+    },
+    "voice.result.wolf_win": {
+      "file": "narration/narration_result_wolf_win_01.ogg",
+      "category": "narration",
+      "scope": "broadcast",
+      "trigger": "GAME_RESULT_WOLF",
+      "text": "最後的燈火熄滅了。狼人占領了村莊，狼人勝利。",
+      "generation_transcript": "最後的燈火熄滅了。\n狼人占領了村莊，\n狼人勝利。",
+      "generation_status": "generated_external",
+      "qa_status": "audition_style_approved; per-file QA pending",
+      "source_preview_url": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/0c8c39eb-ceb7-4ed3-9291-0202993db235.mp3",
+      "priority": "P0"
+    },
+    "music.lobby.loop": {
+      "file": "music/music_lobby_loop_01.ogg",
+      "category": "music",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "music.night.loop": {
+      "file": "music/music_night_loop_01.ogg",
+      "category": "music",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "music.day.loop": {
+      "file": "music/music_day_loop_01.ogg",
+      "category": "music",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "music.vote.loop": {
+      "file": "music/music_vote_loop_01.ogg",
+      "category": "music",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "music.result.village": {
+      "file": "music/music_result_village_01.ogg",
+      "category": "music",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "music.result.wolf": {
+      "file": "music/music_result_wolf_01.ogg",
+      "category": "music",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ambience.lobby.fireplace": {
+      "file": "ambience/ambience_lobby_fireplace_01.ogg",
+      "category": "ambience",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "ambience.night.forest": {
+      "file": "ambience/ambience_night_forest_01.ogg",
+      "category": "ambience",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ambience.day.village": {
+      "file": "ambience/ambience_day_village_01.ogg",
+      "category": "ambience",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ambience.day.birds": {
+      "file": "ambience/ambience_day_birds_01.ogg",
+      "category": "ambience",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.game.start": {
+      "file": "sfx/sfx_game_start_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "sfx.phase.nightfall": {
+      "file": "sfx/sfx_phase_nightfall_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "sfx.phase.dawn": {
+      "file": "sfx/sfx_phase_dawn_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "sfx.wolf.howl_distant": {
+      "file": "sfx/sfx_wolf_howl_distant_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P2"
+    },
+    "sfx.result.death_reveal": {
+      "file": "sfx/sfx_result_death_reveal_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "sfx.vote.reveal": {
+      "file": "sfx/sfx_vote_reveal_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "sfx.vote.tie": {
+      "file": "sfx/sfx_vote_tie_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.vote.exile": {
+      "file": "sfx/sfx_vote_exile_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "sfx.wolf.presence": {
+      "file": "sfx/sfx_wolf_presence_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P2"
+    },
+    "sfx.wolf.confirm": {
+      "file": "sfx/sfx_wolf_confirm_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.guard.protect": {
+      "file": "sfx/sfx_guard_protect_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.seer.result_good": {
+      "file": "sfx/sfx_seer_result_good_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.seer.result_wolf": {
+      "file": "sfx/sfx_seer_result_wolf_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.witch.heal": {
+      "file": "sfx/sfx_witch_heal_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.witch.poison": {
+      "file": "sfx/sfx_witch_poison_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.hunter.trigger": {
+      "file": "sfx/sfx_hunter_trigger_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.hunter.shot": {
+      "file": "sfx/sfx_hunter_shot_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.knight.draw_sword": {
+      "file": "sfx/sfx_knight_draw_sword_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.knight.success": {
+      "file": "sfx/sfx_knight_success_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.knight.fail": {
+      "file": "sfx/sfx_knight_fail_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.idiot.reveal": {
+      "file": "sfx/sfx_idiot_reveal_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.white_wolf_king.charge": {
+      "file": "sfx/sfx_white_wolf_king_charge_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.white_wolf_king.explode": {
+      "file": "sfx/sfx_white_wolf_king_explode_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "sfx.wolf_beauty.charm": {
+      "file": "sfx/sfx_wolf_beauty_charm_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P2"
+    },
+    "sfx.wolf_beauty.link": {
+      "file": "sfx/sfx_wolf_beauty_link_01.ogg",
+      "category": "sfx",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "ui.lobby.player_join": {
+      "file": "ui/ui_lobby_player_join_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P2"
+    },
+    "ui.lobby.player_leave": {
+      "file": "ui/ui_lobby_player_leave_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P2"
+    },
+    "ui.ready": {
+      "file": "ui/ui_ready_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P2"
+    },
+    "ui.role.select": {
+      "file": "ui/ui_role_select_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ui.role.confirm": {
+      "file": "ui/ui_role_confirm_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ui.vote.select": {
+      "file": "ui/ui_vote_select_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ui.vote.confirm": {
+      "file": "ui/ui_vote_confirm_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ui.timer.30sec": {
+      "file": "ui/ui_timer_30sec_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P1"
+    },
+    "ui.timer.10sec": {
+      "file": "ui/ui_timer_10sec_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ui.timer.tick": {
+      "file": "ui/ui_timer_tick_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    },
+    "ui.timer.end": {
+      "file": "ui/ui_timer_end_01.ogg",
+      "category": "ui",
+      "generation_status": "not_generated",
+      "qa_status": "pending",
+      "priority": "P0"
+    }
+  }
+}
