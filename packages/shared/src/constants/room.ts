@@ -1,3 +1,5 @@
+import type { GamePhase } from "../types/phase";
+
 export const ROOM_ID_LENGTH = 7;
 export const ROOM_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -8,7 +10,14 @@ export const DAY_DISCUSSION_SECONDS_MIN = 60;
 export const DAY_DISCUSSION_SECONDS_MAX = 180;
 export const DAY_DISCUSSION_SECONDS_DEFAULT = 120;
 
-export const NIGHT_ACTION_SECONDS = 60;
+/** Default countdown for a night-role action (guard, seer, witch, hunter's shoot). */
+export const NIGHT_ACTION_SECONDS = 20;
+/** Werewolves get longer to discuss and agree on a kill target than other night roles. */
+export const NIGHT_ACTION_SECONDS_WEREWOLF = 30;
+
+export function getNightActionSeconds(phase: GamePhase): number {
+  return phase === "NIGHT_WEREWOLF" ? NIGHT_ACTION_SECONDS_WEREWOLF : NIGHT_ACTION_SECONDS;
+}
 
 /** How long an exiled (or otherwise day-time removed) player gets to speak their last words before night falls. */
 export const LAST_WORDS_SECONDS = 120;

@@ -1,6 +1,6 @@
 import {
   LAST_WORDS_SECONDS,
-  NIGHT_ACTION_SECONDS,
+  getNightActionSeconds,
   type CardPublicState,
   type PlayerPublicState,
   type PublicRoomState,
@@ -91,7 +91,7 @@ function computeNightActionSecondsRemaining(room: Room): number | null {
   if (gameState.nightActionEndsAt === null) {
     return gameState.nightActionRemainingMsAtPause !== null
       ? Math.ceil(gameState.nightActionRemainingMsAtPause / 1000)
-      : NIGHT_ACTION_SECONDS;
+      : getNightActionSeconds(gameState.phase);
   }
   return Math.max(0, Math.ceil((gameState.nightActionEndsAt - Date.now()) / 1000));
 }

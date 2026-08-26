@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { NIGHT_ACTION_SECONDS } from "@kill-wolf/shared";
+import { getNightActionSeconds } from "@kill-wolf/shared";
 import { clearAllRoomsForTest } from "../src/rooms/roomStore";
 import { werewolfConfirmVote, werewolfUnconfirmVote, werewolfVote } from "../src/game/engine";
 import { buildPrivateState } from "../src/game/privateState";
@@ -150,7 +150,7 @@ describe("werewolf night phase", () => {
     expect(outcomes.size).toBe(2);
   });
 
-  it("forces a resolution using whatever targets were selected once the 60s clock runs out", () => {
+  it("forces a resolution using whatever targets were selected once the clock runs out", () => {
     const { room, playerIds } = setupNightReadyRoom(6);
     const wolves = playersWithRole(room, "WEREWOLF");
     const villagers = playerIds.filter((id) => !wolves.includes(id));
@@ -158,7 +158,7 @@ describe("werewolf night phase", () => {
     // Only the first wolf picks a target; nobody confirms.
     werewolfVote(room, wolves[0], villagers[0]);
 
-    vi.advanceTimersByTime(NIGHT_ACTION_SECONDS * 1000 + 100);
+    vi.advanceTimersByTime(getNightActionSeconds("NIGHT_WEREWOLF") * 1000 + 100);
 
     expect(room.gameState.phase).toBe("NIGHT_SEER");
     expect(room.gameState.nightKillTargetPlayerId).toBe(villagers[0]);
@@ -167,7 +167,7 @@ describe("werewolf night phase", () => {
   it("moves on with no kill target if nobody selected anyone before the clock runs out", () => {
     const { room } = setupNightReadyRoom(6);
 
-    vi.advanceTimersByTime(NIGHT_ACTION_SECONDS * 1000 + 100);
+    vi.advanceTimersByTime(getNightActionSeconds("NIGHT_WEREWOLF") * 1000 + 100);
 
     expect(room.gameState.phase).toBe("NIGHT_SEER");
     expect(room.gameState.nightKillTargetPlayerId).toBeNull();

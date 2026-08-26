@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   CLIENT_EVENTS,
   FACTION_LABELS,
-  NIGHT_ACTION_SECONDS,
+  getNightActionSeconds,
   type PrivatePlayerState,
   type PublicRoomState,
 } from "@kill-wolf/shared";
@@ -346,7 +346,9 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
 
   return (
     <>
-      {showNightTimer && <TimeBar endsAt={publicState.nightActionEndsAt} totalSeconds={NIGHT_ACTION_SECONDS} />}
+      {showNightTimer && (
+        <TimeBar endsAt={publicState.nightActionEndsAt} totalSeconds={getNightActionSeconds(publicState.phase)} />
+      )}
       {canDeclareKnightDuel && !knightDuelMode && (
         <Button variant="danger" onClick={() => setKnightDuelMode(true)}>
           ⚔️ 發動決鬥

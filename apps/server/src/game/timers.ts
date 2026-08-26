@@ -1,4 +1,4 @@
-import { LAST_WORDS_SECONDS, NIGHT_ACTION_SECONDS } from "@kill-wolf/shared";
+import { LAST_WORDS_SECONDS, getNightActionSeconds } from "@kill-wolf/shared";
 import type { Room } from "../rooms/roomTypes";
 import { broadcastRoom } from "../rooms/roomBroadcast";
 import { advanceToNextSpeakerOrVote, finishLastWords, runNightActionTimeout } from "./phases";
@@ -62,7 +62,8 @@ export function clearNightActionTimer(room: Room): void {
 
 export function startNightActionTimer(room: Room): void {
   clearNightActionTimer(room);
-  const remainingMs = room.gameState.nightActionRemainingMsAtPause ?? NIGHT_ACTION_SECONDS * 1000;
+  const remainingMs =
+    room.gameState.nightActionRemainingMsAtPause ?? getNightActionSeconds(room.gameState.phase) * 1000;
   room.gameState.nightActionRemainingMsAtPause = null;
   room.gameState.nightActionEndsAt = Date.now() + remainingMs;
   room.nightActionTimeoutHandle = setTimeout(() => {
