@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import type { GamePhase } from "@kill-wolf/shared";
 import type { Player, Room } from "../rooms/roomTypes";
 import { broadcastRoom } from "../rooms/roomBroadcast";
@@ -273,6 +274,11 @@ export function enterPhase(room: Room, phase: GamePhase): void {
         markLastRemoved(room, room.gameState.nightKillTargetPlayerId!);
       } else if (deaths.length > 0) {
         markLastRemoved(room, deaths[0]);
+      } else if (room.gameState.lastRemovedSeatIndex === -1 && room.playerOrder.length > 0) {
+        // First night was peaceful (nobody died), so there's no "seat after the removed player"
+        // to anchor the speaking order to. Without this, computeSpeakingOrder's fallback would
+        // always start from seat 0 -- i.e. the same player (whoever created the room) every time.
+        room.gameState.lastRemovedSeatIndex = randomInt(room.playerOrder.length);
       }
 
       // A hunter always gets to decide whether to shoot before the game checks for a winner --
