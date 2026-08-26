@@ -23,6 +23,12 @@ interface PlayerCardTableProps {
   highlightIds?: ReadonlySet<string>;
   /** Players who currently hold the floor -- rendered larger with a glowing border. */
   speakingIds?: ReadonlySet<string>;
+  /** Small overlay label per card (e.g. the seat numbers currently targeting that player) --
+   * only ever populated for viewers who are allowed to see it (the werewolf pack). */
+  cardBadges?: ReadonlyMap<string, string>;
+  /** Text shown under a specific player's name (e.g. "狼隊友") -- unlike centerContent, this is
+   * per-card, so each labeled player's own card carries its own caption. */
+  cardCaptions?: ReadonlyMap<string, string>;
   extraCard?: PlayerCardTableExtraCard | null;
   onSelect?: (id: string) => void;
   /** True while it's the viewer's own turn to hold the floor -- makes the status line hard to miss. */
@@ -58,6 +64,8 @@ export function PlayerCardTable({
   selectedIds,
   highlightIds,
   speakingIds,
+  cardBadges,
+  cardCaptions,
   extraCard,
   onSelect,
   isSelfTurn,
@@ -103,8 +111,10 @@ export function PlayerCardTable({
                 <span className="game-card-seat">{seatNumber}</span>
                 {!player.isConnected && <span className="game-card-offline" title="離線" />}
                 {!player.isAlive && <span className="game-card-dead-mark">✕</span>}
+                {cardBadges?.has(player.playerId) && <span className="game-card-vote-mark">{cardBadges.get(player.playerId)}</span>}
               </div>
               <span className="game-card-name">{player.name}</span>
+              {cardCaptions?.has(player.playerId) && <span className="game-card-caption">{cardCaptions.get(player.playerId)}</span>}
             </div>
           );
         })}
@@ -141,6 +151,7 @@ export function PlayerCardTable({
               <span className="game-card-seat">{players.indexOf(self) + 1}</span>
               {!self.isConnected && <span className="game-card-offline" title="離線" />}
               {!self.isAlive && <span className="game-card-dead-mark">✕</span>}
+              {cardBadges?.has(self.playerId) && <span className="game-card-vote-mark">{cardBadges.get(self.playerId)}</span>}
             </div>
             <span className="game-card-name">{self.name}（你）</span>
           </div>

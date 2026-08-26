@@ -74,6 +74,8 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
   let selectedIds: Set<string> | undefined;
   let highlightIds: Set<string> | undefined;
   let speakingIds: Set<string> | undefined;
+  let cardBadges: Map<string, string> | undefined;
+  let cardCaptions: Map<string, string> | undefined;
   let extraCard: PlayerCardTableExtraCard | null = null;
   let centerContent: string | null = null;
   let onSelect: ((id: string) => void) | undefined;
@@ -149,46 +151,53 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
     const votes = privateState.werewolfVotes ?? {};
     const myTargetId = votes[selfPlayerId];
     selectedIds = myTargetId ? new Set([myTargetId]) : undefined;
-    // Every wolf's current pick is visible to the whole pack, not just their own -- highlight
-    // teammates' chosen targets on the shared table (selectedIds already marks your own).
-    const allyTargetIds = Object.entries(votes)
-      .filter(([voterId]) => voterId !== selfPlayerId)
-      .map(([, targetId]) => targetId);
-    highlightIds = allyTargetIds.length > 0 ? new Set(allyTargetIds) : undefined;
 
-    // Always visible regardless of whether you've confirmed yet, so you can keep watching what
-    // the rest of the pack decides.
-    const wolfLines = publicState.players
-      .filter((p) => privateState.werewolfAllyPlayerIds?.includes(p.playerId) || p.playerId === selfPlayerId)
-      .map((wolf) => {
-        const targetId = votes[wolf.playerId];
-        const confirmed = privateState.werewolfConfirmedPlayerIds?.includes(wolf.playerId) ?? false;
-        const label = wolf.playerId === selfPlayerId ? `${wolf.name}（你）` : wolf.name;
-        const choice = targetId ? `選擇 ${playerName(publicState, targetId)}${confirmed ? "（已確認）" : "（選擇中）"}` : "尚未選擇";
-        return `${label}：${choice}`;
-      });
+    // Teammates' identities are revealed the same way the seer's check result is highlighted --
+    // a colored outline -- but labeled individually under each teammate's own card rather than
+    // one shared label in the middle of the table.
+    const allyIds = privateState.werewolfAllyPlayerIds ?? [];
+    if (allyIds.length > 0) {
+      highlightIds = new Set(allyIds);
+      cardCaptions = new Map(allyIds.map((id) => [id, "狼隊友"]));
+    }
+
+    // Only the pack can see this table at all, so it's safe to show exactly which seat numbers
+    // are currently aiming at which target -- a small badge on each targeted card, mirroring the
+    // "N 人選擇中" count shown during card picking, but with real identities since wolves already
+    // know each other.
+    const votesByTarget = new Map<string, string[]>();
+    for (const [voterId, targetId] of Object.entries(votes)) {
+      const seatNumber = publicState.players.findIndex((p) => p.playerId === voterId) + 1;
+      if (seatNumber <= 0) continue;
+      const seats = votesByTarget.get(targetId) ?? [];
+      seats.push(String(seatNumber));
+      votesByTarget.set(targetId, seats);
+    }
+    cardBadges = new Map([...votesByTarget.entries()].map(([targetId, seats]) => [targetId, seats.join("、")]));
 
     if (isConfirmed) {
       selectableIds = new Set([selfPlayerId]);
       onSelect = (id) => {
         if (id === selfPlayerId) socket.emit(CLIENT_EVENTS.WEREWOLF_UNCONFIRM_VOTE, { roomId });
       };
-      statusText = `已確認，等待其他狼人確認...（點自己的牌可取消確認）　${wolfLines.join("　")}`;
+      statusText = "已確認，等待其他狼人確認...（點自己的牌可取消確認）";
     } else {
+      // Same click-again-to-lock-in pattern as the initial card pick: the first click on a card
+      // just marks it as the pending target (like choosing a face-down card); clicking that same
+      // card again is what actually confirms it (like the "確認這張牌" step) -- no popup modal.
       selectableIds = new Set(alivePlayerIds);
       onSelect = (targetPlayerId) => {
-        const targetName = playerName(publicState, targetPlayerId);
-        setPendingConfirm({
-          message: `確定要殺 ${targetName} 嗎？`,
-          onConfirm: () => {
-            playCue("sfx.wolf.confirm");
-            socket.emit(CLIENT_EVENTS.WEREWOLF_VOTE, { roomId, targetPlayerId });
-            socket.emit(CLIENT_EVENTS.WEREWOLF_CONFIRM_VOTE, { roomId });
-            setPendingConfirm(null);
-          },
-        });
+        if (targetPlayerId === myTargetId) {
+          playCue("sfx.wolf.confirm");
+          socket.emit(CLIENT_EVENTS.WEREWOLF_CONFIRM_VOTE, { roomId });
+          return;
+        }
+        playCue("ui.vote.select");
+        socket.emit(CLIENT_EVENTS.WEREWOLF_VOTE, { roomId, targetPlayerId });
       };
-      statusText = wolfLines.join("　");
+      statusText = myTargetId
+        ? `已選擇 ${playerName(publicState, myTargetId)}，點選兩下確認襲擊對象`
+        : "點選兩下確認襲擊對象";
     }
   } else if (publicState.phase === "NIGHT_SEER" && privateState.role === "SEER") {
     // seerJustCheckedTonight above already covers the post-check state (and beyond, into
@@ -369,6 +378,8 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
         selectedIds={selectedIds}
         highlightIds={highlightIds}
         speakingIds={speakingIds}
+        cardBadges={cardBadges}
+        cardCaptions={cardCaptions}
         extraCard={extraCard}
         onSelect={onSelect}
         isSelfTurn={isSelfTurn}
