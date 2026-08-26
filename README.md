@@ -2,6 +2,8 @@
 
 無主持人的狼人殺線上發牌與流程控制網站。詳細規格見 [DEVELOPMENT_SPEC.md](./DEVELOPMENT_SPEC.md)。
 
+固定核心角色為狼人、預言家、女巫，房主可依人數再加選獵人、守衛、騎士，其餘補平民。遊戲內含語音敘事、音樂與音效系統，並支援死亡玩家以旁觀者身分繼續觀看（可選擇是否揭露身分）。
+
 ## 專案結構
 
 Monorepo（npm workspaces）：
@@ -38,6 +40,10 @@ npm run dev:server   # 只啟動後端（http://localhost:3000）
 
 - `VITE_SERVER_URL`（預設 `http://localhost:3000`）
 
+## 部署
+
+`master` 每次 push 會透過 GitHub Actions（見 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)）自動跑 `typecheck` 與 `test`，通過後建置前端並部署到 GitHub Pages。後端則依 [`render.yaml`](./render.yaml) 部署到 Render，需在該服務設定 `CLIENT_ORIGIN` 環境變數為前端網域。
+
 ## 開發測試工具
 
 `npm run dev:web` 啟動後，開發環境下可以開 http://localhost:5173/dev 使用內建的多玩家測試頁：一鍵建立測試房、一鍵補滿假玩家，並可在同一頁的分頁列切換不同玩家視角（每個模擬玩家都是獨立的 Socket.IO 連線，用真正的畫面元件渲染，不是另外做的簡化版）。不需要再手動開多個無痕視窗測試——而且無痕視窗本來就會共用 localStorage，同一瀏覽器開多個無痕視窗實際上會被當成同一個玩家。
@@ -66,13 +72,13 @@ npm run build        # 建置前端（後端目前以 tsx 直接執行，見下�
 - ✅ Phase 4：Socket.IO 狀態同步基礎
 - ✅ Phase 5：前端基本流程（首頁、等待房、加入）
 - ✅ Phase 6：選牌與角色揭示
-- ✅ Phase 7：後端遊戲引擎（狀態機、狼人/預言家/女巫、投票、勝負判定）
+- ✅ Phase 7：後端遊戲引擎（狀態機、狼人/預言家/女巫/獵人/守衛/騎士、投票、勝負判定）
 - ✅ Phase 8：遊戲頁整合（可完整跑完一局）
 - ✅ Phase 9：開發測試工具（`DevMultiViewPage`，見上方「開發測試工具」）
-- ⏳ Phase 10：打磨、錯誤處理與部署準備（尚未開始）
+- 🔄 Phase 10：打磨、錯誤處理與部署準備（進行中——CI/CD 部署已上線，見上方「部署」；多數頁面已補上錯誤提示與 loading/disabled 狀態，手機版細節與邊界情況仍持續調整）
 
 ## 已知簡化與待補項目
 
 - `NIGHT_START`／`DAY_ANNOUNCEMENT`／`DAY_EXILE_RESULT` 之間的短暫轉場延遲（1.2～3 秒）目前不會因玩家斷線而暫停；只有 `DAY_DISCUSSION` 倒數與所有需要玩家操作才能推進的階段會確實暫停。
-- 尚未加入完整的前端錯誤提示、loading/disabled 細節打磨。
-- `apps/server` 的 `build` script 目前只做 typecheck，尚未提供正式部署用的編譯產物。
+- 前端錯誤提示與手機版細節仍持續打磨中，尚未覆蓋所有邊界情況。
+- `apps/server` 的 `build` script 目前只做 typecheck，尚未提供正式部署用的編譯產物（Render 上直接以 `tsx` 執行原始碼）。
