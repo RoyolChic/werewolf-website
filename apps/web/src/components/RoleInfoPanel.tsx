@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getRoleImagePath, ROLE_RULES, type Role } from "@kill-wolf/shared";
+import { withBase } from "../lib/assetPath";
 import { RoleBadge } from "./RoleBadge";
 
 export function RoleInfoPanel({ role, variantIndex = 0 }: { role: Role; variantIndex?: number }) {
@@ -11,7 +12,7 @@ export function RoleInfoPanel({ role, variantIndex = 0 }: { role: Role; variantI
       {!imageFailed && (
         <img
           className="role-info-image"
-          src={getRoleImagePath(role, variantIndex)}
+          src={withBase(getRoleImagePath(role, variantIndex))}
           alt=""
           onError={() => setImageFailed(true)}
         />

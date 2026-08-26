@@ -1,10 +1,11 @@
 import type { GamePhase } from "@kill-wolf/shared";
+import { withBase } from "./assetPath";
 
-const NIGHT = "/background/night-background.png";
-const SEER = "/background/seer-background.png";
-const WITCH = "/background/witch-background.png";
-const DAYLIGHT = "/background/daylight-background.png";
-const VOTE = "/background/vote-background.png";
+const NIGHT = withBase("/background/night-background.png");
+const SEER = withBase("/background/seer-background.png");
+const WITCH = withBase("/background/witch-background.png");
+const DAYLIGHT = withBase("/background/daylight-background.png");
+const VOTE = withBase("/background/vote-background.png");
 
 /** Fallback backdrop for pages/states that have no GamePhase yet (home page, connecting, ...). */
 export const DEFAULT_BACKGROUND_PATH = NIGHT;

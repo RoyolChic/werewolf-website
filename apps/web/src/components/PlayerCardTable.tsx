@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CARD_BACK_IMAGE_PATH, getRoleImagePath, type PlayerPublicState, type Role } from "@kill-wolf/shared";
+import { withBase } from "../lib/assetPath";
 
 export interface PlayerCardTableExtraCard {
   id: string;
@@ -71,7 +72,7 @@ export function PlayerCardTable({
           const seatNumber = players.indexOf(player) + 1;
           return (
             <div key={player.playerId} className={`game-card ${statusClassNames(player.playerId, player.isAlive)}`} {...handlersFor(player.playerId)}>
-              <div className="game-card-face" style={{ backgroundImage: `url(${CARD_BACK_IMAGE_PATH})` }}>
+              <div className="game-card-face" style={{ backgroundImage: `url(${withBase(CARD_BACK_IMAGE_PATH)})` }}>
                 <span className="game-card-seat">{seatNumber}</span>
                 {!player.isConnected && <span className="game-card-offline" title="離線" />}
                 {!player.isAlive && <span className="game-card-dead-mark">✕</span>}
@@ -102,7 +103,7 @@ export function PlayerCardTable({
           >
             <div
               className="game-card-face game-card-face-up"
-              style={selfRole ? { backgroundImage: `url(${getRoleImagePath(selfRole, selfRoleVariantIndex)})` } : undefined}
+              style={selfRole ? { backgroundImage: `url(${withBase(getRoleImagePath(selfRole, selfRoleVariantIndex))})` } : undefined}
             >
               <span className="game-card-seat">{players.indexOf(self) + 1}</span>
               {!self.isConnected && <span className="game-card-offline" title="離線" />}

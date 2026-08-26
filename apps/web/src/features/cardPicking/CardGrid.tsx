@@ -1,5 +1,6 @@
 import { CARD_BACK_IMAGE_PATH, type CardPublicState } from "@kill-wolf/shared";
 import { useAudio } from "../../lib/audio/audioContext";
+import { withBase } from "../../lib/assetPath";
 
 interface CardGridProps {
   cards: CardPublicState[];
@@ -21,7 +22,7 @@ export function CardGrid({ cards, selfPlayerId, onPick, onConfirm, onCancel, has
           <div key={card.cardIndex} className={`face-down-card ${card.isLocked ? "face-down-card-locked" : ""} ${isMine ? "face-down-card-mine" : ""}`}>
             <div
               className="face-down-card-inner"
-              style={{ backgroundImage: `url(${CARD_BACK_IMAGE_PATH}), linear-gradient(135deg, var(--color-primary), #3a2fbf)` }}
+              style={{ backgroundImage: `url(${withBase(CARD_BACK_IMAGE_PATH)}), linear-gradient(135deg, var(--color-primary), #3a2fbf)` }}
               onClick={() => {
                 if (card.isLocked || hasConfirmed) return;
                 playCue("ui.role.select");

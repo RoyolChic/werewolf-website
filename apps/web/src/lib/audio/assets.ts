@@ -11,7 +11,9 @@
  * matching file is added here.
  */
 
-const BASE = "/audio/werewolf_audio_bundle";
+import { withBase } from "../assetPath";
+
+const BASE = withBase("/audio/werewolf_audio_bundle");
 
 export type AudioScope = "broadcast" | "team_private" | "player_private";
 
