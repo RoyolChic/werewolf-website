@@ -816,6 +816,33 @@ h3 {
   padding-bottom: 8px;
 }
 
+.vote-table-title {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.vote-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.vote-table th,
+.vote-table td {
+  border: 1px solid oklch(45% 0.02 60 / 0.4);
+  padding: 4px 8px;
+  text-align: center;
+}
+
+.vote-table th {
+  background: oklch(30% 0.02 60 / 0.4);
+}
+
+.vote-table-result {
+  margin: 6px 0 0;
+  font-weight: 600;
+}
+
 .game-log-notes {
   width: 100%;
   min-height: 200px;

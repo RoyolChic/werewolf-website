@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FACTION_LABELS, type PrivatePlayerState, type PublicRoomState } from "@kill-wolf/shared";
+import { useState, type ReactNode } from "react";
+import { FACTION_LABELS, type PrivatePlayerState, type PublicRoomState, type VoteHistoryEntry } from "@kill-wolf/shared";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
 
@@ -8,12 +8,89 @@ type Tab = "LOG" | "PRIVATE" | "NOTES";
 interface TimelineEntry {
   key: string;
   order: number;
-  text: string;
+  content: ReactNode;
 }
 
 function playerName(publicState: PublicRoomState, playerId: string | null): string {
   if (!playerId) return "棄票";
   return publicState.players.find((p) => p.playerId === playerId)?.name ?? playerId;
+}
+
+function seatNumberOf(publicState: PublicRoomState, playerId: string): number | null {
+  const index = publicState.players.findIndex((p) => p.playerId === playerId);
+  return index === -1 ? null : index + 1;
+}
+
+function VoteTable({ publicState, vote }: { publicState: PublicRoomState; vote: VoteHistoryEntry }) {
+  const votersByTarget = new Map<string, number[]>();
+  const abstainSeats: number[] = [];
+
+  for (const [voterId, targetId] of Object.entries(vote.votes)) {
+    const voterSeat = seatNumberOf(publicState, voterId);
+    if (voterSeat === null) continue;
+    if (!targetId) {
+      abstainSeats.push(voterSeat);
+      continue;
+    }
+    const seats = votersByTarget.get(targetId) ?? [];
+    seats.push(voterSeat);
+    votersByTarget.set(targetId, seats);
+  }
+
+  let resultText: string;
+  if (vote.exiledPlayerId) {
+    resultText = `${playerName(publicState, vote.exiledPlayerId)} 被放逐`;
+  } else if (votersByTarget.size === 0) {
+    resultText = "全員棄票，無人出局";
+  } else {
+    const maxCount = Math.max(...[...votersByTarget.values()].map((seats) => seats.length));
+    const tiedSeats = [...votersByTarget.entries()]
+      .filter(([, seats]) => seats.length === maxCount)
+      .map(([targetId]) => seatNumberOf(publicState, targetId))
+      .filter((seat): seat is number => seat !== null)
+      .sort((a, b) => a - b);
+    resultText =
+      vote.round === 1
+        ? `${tiedSeats.join("、")} 號平票，進入第二輪投票`
+        : `${tiedSeats.join("、")} 號再次平票，無人出局`;
+  }
+
+  return (
+    <div>
+      <p className="vote-table-title">
+        第 {vote.day} 天投票（第 {vote.round} 輪）
+      </p>
+      <table className="vote-table">
+        <thead>
+          <tr>
+            <th>號碼</th>
+            <th>投票的人</th>
+            <th>票數</th>
+          </tr>
+        </thead>
+        <tbody>
+          {publicState.players.map((player, index) => {
+            const seats = (votersByTarget.get(player.playerId) ?? []).sort((a, b) => a - b);
+            return (
+              <tr key={player.playerId}>
+                <td>{index + 1}</td>
+                <td>{seats.join("、")}</td>
+                <td>{seats.length}</td>
+              </tr>
+            );
+          })}
+          {abstainSeats.length > 0 && (
+            <tr>
+              <td>棄票</td>
+              <td>{abstainSeats.sort((a, b) => a - b).join("、")}</td>
+              <td>{abstainSeats.length}</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      <p className="vote-table-result">結果：{resultText}</p>
+    </div>
+  );
 }
 
 function buildTimeline(publicState: PublicRoomState): TimelineEntry[] {
@@ -26,18 +103,14 @@ function buildTimeline(publicState: PublicRoomState): TimelineEntry[] {
         : `第 ${night.night} 夜：${night.deathPlayerIds.map((id) => playerName(publicState, id)).join("、")} 死亡${
             night.doubleProtected ? "（同守同救，解藥失效）" : ""
           }`;
-    entries.push({ key: `night-${night.night}`, order: night.night * 2, text });
+    entries.push({ key: `night-${night.night}`, order: night.night * 2, content: text });
   }
 
   for (const vote of publicState.voteHistory) {
-    const voteLines = Object.entries(vote.votes)
-      .map(([voterId, targetId]) => `${playerName(publicState, voterId)}→${playerName(publicState, targetId)}`)
-      .join("、");
-    const resultText = vote.exiledPlayerId ? `${playerName(publicState, vote.exiledPlayerId)} 被放逐` : "無人出局";
     entries.push({
       key: `vote-${vote.day}-${vote.round}`,
       order: vote.day * 2 + 1,
-      text: `第 ${vote.day} 天投票（第 ${vote.round} 輪）：${voteLines || "無人投票"} → ${resultText}`,
+      content: <VoteTable publicState={publicState} vote={vote} />,
     });
   }
 
@@ -100,9 +173,9 @@ export function GameLogPanel({
                 <p className="muted-text">目前還沒有紀錄</p>
               ) : (
                 timeline.map((entry) => (
-                  <p key={entry.key} className="game-log-entry">
-                    {entry.text}
-                  </p>
+                  <div key={entry.key} className="game-log-entry">
+                    {entry.content}
+                  </div>
                 ))
               )}
             </div>
