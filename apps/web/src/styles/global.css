@@ -685,13 +685,17 @@ h3 {
 .game-table {
   display: flex;
   flex-direction: column;
+  /* Scales with viewport width so cards grow on desktop and shrink on small screens; every
+     card-family width below derives from this instead of its own fixed px so they stay
+     proportional to each other as the viewport changes. */
+  --game-card-w: clamp(70px, 9vw, 112px);
 }
 
 .game-table-row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   padding: 4px 4px 8px;
 }
 
@@ -717,7 +721,7 @@ h3 {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .game-table-status {
@@ -745,7 +749,7 @@ h3 {
 
 .game-card {
   flex: 0 0 auto;
-  width: 72px;
+  width: var(--game-card-w);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -814,13 +818,13 @@ h3 {
 
 .game-card-seat {
   margin: 4px;
-  min-width: 18px;
-  height: 18px;
+  min-width: 20px;
+  height: 20px;
   padding: 0 4px;
   border-radius: 999px;
   background: var(--player-color, oklch(10% 0 0 / 0.55));
   color: var(--color-ink);
-  font-size: 11px;
+  font-size: clamp(11px, 1.2vw, 13px);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -862,13 +866,13 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: clamp(24px, 3.2vw, 34px);
   font-weight: 700;
   color: oklch(96% 0.01 30 / 0.85);
 }
 
 .game-card-name {
-  font-size: 11px;
+  font-size: clamp(11px, 1.3vw, 13px);
   text-align: center;
   line-height: 1.2;
   max-width: 100%;
@@ -878,7 +882,7 @@ h3 {
 }
 
 .game-card-caption {
-  font-size: 10px;
+  font-size: clamp(10px, 1.1vw, 12px);
   font-weight: 700;
   color: var(--color-danger-2);
   line-height: 1.2;
@@ -888,11 +892,11 @@ h3 {
   color: var(--color-primary-2);
   font-weight: 600;
   white-space: normal;
-  font-size: 13px;
+  font-size: clamp(12px, 1.5vw, 15px);
 }
 
 .game-card-large {
-  width: 120px;
+  width: calc(var(--game-card-w) * 1.6);
 }
 
 .game-card-face-up {
@@ -918,7 +922,7 @@ h3 {
 }
 
 .game-potion-card {
-  width: 52px;
+  width: calc(var(--game-card-w) * 0.72);
 }
 
 .game-potion-face {
@@ -929,7 +933,7 @@ h3 {
 }
 
 .game-potion-icon {
-  font-size: 26px;
+  font-size: clamp(22px, 2.8vw, 32px);
   line-height: 1;
   filter: drop-shadow(0 2px 4px oklch(0% 0 0 / 0.4));
   transition: transform 0.25s ease;
