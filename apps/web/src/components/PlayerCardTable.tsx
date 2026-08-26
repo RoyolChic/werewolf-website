@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { CARD_BACK_IMAGE_PATH, getRoleImagePath, type PlayerPublicState, type Role } from "@kill-wolf/shared";
 import { withBase } from "../lib/assetPath";
+import { getPlayerColor } from "../lib/playerColors";
 
 export interface PlayerCardTableExtraCard {
   id: string;
@@ -24,6 +25,19 @@ interface PlayerCardTableProps {
   speakingIds?: ReadonlySet<string>;
   extraCard?: PlayerCardTableExtraCard | null;
   onSelect?: (id: string) => void;
+  /** True while it's the viewer's own turn to hold the floor -- makes the status line hard to miss. */
+  isSelfTurn?: boolean;
+}
+
+/** Every player's identity color (by seat index) as CSS custom properties, so plain CSS can pick
+ * them up for badges, borders, and the speaking glow without recomputing per stylesheet rule. */
+function seatColorStyle(seatIndex: number): CSSProperties {
+  const color = getPlayerColor(seatIndex);
+  return {
+    "--player-color": color.solid,
+    "--player-glow-low": color.glowLow,
+    "--player-glow-high": color.glowHigh,
+  } as CSSProperties;
 }
 
 /**
@@ -46,6 +60,7 @@ export function PlayerCardTable({
   speakingIds,
   extraCard,
   onSelect,
+  isSelfTurn,
 }: PlayerCardTableProps) {
   const self = players.find((p) => p.playerId === selfPlayerId) ?? null;
   const others = players.filter((p) => p.playerId !== selfPlayerId);
@@ -78,7 +93,12 @@ export function PlayerCardTable({
         {others.map((player) => {
           const seatNumber = players.indexOf(player) + 1;
           return (
-            <div key={player.playerId} className={`game-card ${statusClassNames(player.playerId, player.isAlive)}`} {...handlersFor(player.playerId)}>
+            <div
+              key={player.playerId}
+              className={`game-card ${statusClassNames(player.playerId, player.isAlive)}`}
+              style={seatColorStyle(seatNumber - 1)}
+              {...handlersFor(player.playerId)}
+            >
               <div className="game-card-face" style={{ backgroundImage: `url(${withBase(CARD_BACK_IMAGE_PATH)})` }}>
                 <span className="game-card-seat">{seatNumber}</span>
                 {!player.isConnected && <span className="game-card-offline" title="離線" />}
@@ -102,11 +122,16 @@ export function PlayerCardTable({
         )}
       </div>
       {centerContent != null && <div className="game-table-center">{centerContent}</div>}
-      {statusText && <p className="muted-text game-table-status">{statusText}</p>}
+      {statusText && (
+        <p className={isSelfTurn ? "game-table-status game-table-status-self" : "muted-text game-table-status"} style={self ? seatColorStyle(players.indexOf(self)) : undefined}>
+          {statusText}
+        </p>
+      )}
       {self && (
         <div className="game-table-self-row">
           <div
             className={`game-card game-card-self game-card-large ${statusClassNames(self.playerId, self.isAlive)}`}
+            style={seatColorStyle(players.indexOf(self))}
             {...handlersFor(self.playerId)}
           >
             <div

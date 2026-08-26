@@ -1,4 +1,5 @@
 import type { PlayerPublicState } from "@kill-wolf/shared";
+import { getPlayerColor } from "../lib/playerColors";
 
 interface PlayerListProps {
   players: PlayerPublicState[];
@@ -10,8 +11,9 @@ interface PlayerListProps {
 export function PlayerList({ players, selfPlayerId, onKick, showKick }: PlayerListProps) {
   return (
     <ul className="player-list">
-      {players.map((player) => (
+      {players.map((player, index) => (
         <li key={player.playerId} className={`player-row ${!player.isAlive ? "player-row-dead" : ""}`}>
+          <span className="player-color-dot" style={{ backgroundColor: getPlayerColor(index).solid }} />
           <span className="player-name">
             {player.name}
             {player.playerId === selfPlayerId ? "（你）" : ""}

@@ -1,7 +1,18 @@
 import { useState, type ReactNode } from "react";
 import { FACTION_LABELS, type PrivatePlayerState, type PublicRoomState, type VoteHistoryEntry } from "@kill-wolf/shared";
+import { getPlayerColor } from "../lib/playerColors";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
+
+/** A seat number rendered as a small colored chip, matching that player's identity color
+ * everywhere else on the table -- lets a glance at the vote table connect back to who's who. */
+function SeatChip({ seatNumber }: { seatNumber: number }) {
+  return (
+    <span className="seat-chip" style={{ backgroundColor: getPlayerColor(seatNumber - 1).solid }}>
+      {seatNumber}
+    </span>
+  );
+}
 
 type Tab = "LOG" | "PRIVATE" | "NOTES";
 
@@ -73,8 +84,16 @@ function VoteTable({ publicState, vote }: { publicState: PublicRoomState; vote: 
             const seats = (votersByTarget.get(player.playerId) ?? []).sort((a, b) => a - b);
             return (
               <tr key={player.playerId}>
-                <td>{index + 1}</td>
-                <td>{seats.join("、")}</td>
+                <td>
+                  <SeatChip seatNumber={index + 1} />
+                </td>
+                <td>
+                  <div className="seat-chip-group">
+                    {seats.map((seat) => (
+                      <SeatChip key={seat} seatNumber={seat} />
+                    ))}
+                  </div>
+                </td>
                 <td>{seats.length}</td>
               </tr>
             );
@@ -82,7 +101,15 @@ function VoteTable({ publicState, vote }: { publicState: PublicRoomState; vote: 
           {abstainSeats.length > 0 && (
             <tr>
               <td>棄票</td>
-              <td>{abstainSeats.sort((a, b) => a - b).join("、")}</td>
+              <td>
+                <div className="seat-chip-group">
+                  {abstainSeats
+                    .sort((a, b) => a - b)
+                    .map((seat) => (
+                      <SeatChip key={seat} seatNumber={seat} />
+                    ))}
+                </div>
+              </td>
               <td>{abstainSeats.length}</td>
             </tr>
           )}

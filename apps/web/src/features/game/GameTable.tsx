@@ -78,6 +78,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
   let centerContent: string | null = null;
   let onSelect: ((id: string) => void) | undefined;
   let statusText: string | null = null;
+  let isSelfTurn = false;
   const showNightTimer =
     (publicState.phase === "NIGHT_GUARD" && privateState.role === "GUARD") ||
     (publicState.phase === "NIGHT_WEREWOLF" && privateState.role === "WEREWOLF") ||
@@ -290,6 +291,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
         if (id === selfPlayerId) socket.emit(CLIENT_EVENTS.SKIP_DAY_DISCUSSION, { roomId });
       };
       statusText = "輪到你發言了，說完後點自己的牌結束發言";
+      isSelfTurn = true;
     }
   } else if (publicState.phase === "DAY_LAST_WORDS") {
     speakingIds = publicState.lastWordsPlayerId ? new Set([publicState.lastWordsPlayerId]) : undefined;
@@ -300,6 +302,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
         if (id === selfPlayerId) socket.emit(CLIENT_EVENTS.END_LAST_WORDS, { roomId });
       };
       statusText = "輪到你留下遺言了，說完後點自己的牌結束";
+      isSelfTurn = true;
     } else {
       const speakerId = publicState.lastWordsPlayerId;
       statusText = speakerId ? `${playerName(publicState, speakerId)}正在留下遺言...` : null;
@@ -368,6 +371,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
         speakingIds={speakingIds}
         extraCard={extraCard}
         onSelect={onSelect}
+        isSelfTurn={isSelfTurn}
       />
       {pendingConfirm && (
         <ConfirmDialog
