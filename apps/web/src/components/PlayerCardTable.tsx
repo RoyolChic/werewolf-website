@@ -9,6 +9,17 @@ export interface PlayerCardTableExtraCard {
   disabled?: boolean;
 }
 
+/** A small action card flanking the viewer's own card (e.g. the witch's antidote/poison) --
+ * distinct from extraCard, which renders in the others' row instead. */
+export interface PlayerCardSideAction {
+  id: string;
+  icon: ReactNode;
+  label: string;
+  /** Visually enlarged and glowing -- this action is the one a card click will apply. */
+  armed?: boolean;
+  disabled?: boolean;
+}
+
 interface PlayerCardTableProps {
   players: PlayerPublicState[];
   selfPlayerId: string;
@@ -30,6 +41,9 @@ interface PlayerCardTableProps {
    * per-card, so each labeled player's own card carries its own caption. */
   cardCaptions?: ReadonlyMap<string, string>;
   extraCard?: PlayerCardTableExtraCard | null;
+  /** Action cards flanking the viewer's own card, left and right (e.g. the witch's potions). */
+  leftSideAction?: PlayerCardSideAction | null;
+  rightSideAction?: PlayerCardSideAction | null;
   onSelect?: (id: string) => void;
   /** True while it's the viewer's own turn to hold the floor -- makes the status line hard to miss. */
   isSelfTurn?: boolean;
@@ -67,6 +81,8 @@ export function PlayerCardTable({
   cardBadges,
   cardCaptions,
   extraCard,
+  leftSideAction,
+  rightSideAction,
   onSelect,
   isSelfTurn,
 }: PlayerCardTableProps) {
@@ -93,6 +109,33 @@ export function PlayerCardTable({
       role: clickable ? ("button" as const) : undefined,
       tabIndex: clickable ? 0 : undefined,
     };
+  }
+
+  function renderSideAction(action: PlayerCardSideAction | null | undefined) {
+    if (!action) return null;
+    const clickable = Boolean(onSelect) && !action.disabled;
+    return (
+      <div
+        key={action.id}
+        className={[
+          "game-card",
+          "game-potion-card",
+          action.armed ? "game-potion-armed" : "",
+          action.disabled ? "game-potion-disabled" : "",
+          clickable ? "game-card-clickable" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        onClick={clickable ? () => onSelect?.(action.id) : undefined}
+        role={clickable ? "button" : undefined}
+        tabIndex={clickable ? 0 : undefined}
+      >
+        <div className="game-card-face game-potion-face">
+          <span className="game-potion-icon">{action.icon}</span>
+        </div>
+        <span className="game-card-name">{action.label}</span>
+      </div>
+    );
   }
 
   return (
@@ -139,6 +182,7 @@ export function PlayerCardTable({
       )}
       {self && (
         <div className="game-table-self-row">
+          {renderSideAction(leftSideAction)}
           <div
             className={`game-card game-card-self game-card-large ${statusClassNames(self.playerId, self.isAlive)}`}
             style={seatColorStyle(players.indexOf(self))}
@@ -155,6 +199,7 @@ export function PlayerCardTable({
             </div>
             <span className="game-card-name">{self.name}（你）</span>
           </div>
+          {renderSideAction(rightSideAction)}
         </div>
       )}
     </div>

@@ -8,13 +8,16 @@ import {
 } from "@kill-wolf/shared";
 import { useSocket } from "../../lib/socketContext";
 import { useAudio } from "../../lib/audio/audioContext";
+import { withBase } from "../../lib/assetPath";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { PlayerCardTable, type PlayerCardTableExtraCard } from "../../components/PlayerCardTable";
+import { PlayerCardTable, type PlayerCardSideAction, type PlayerCardTableExtraCard } from "../../components/PlayerCardTable";
 import { TimeBar } from "../../components/TimeBar";
 
 const ABSTAIN_ID = "__ABSTAIN__";
 const WITCH_DECLINE_ID = "__WITCH_DECLINE__";
+const WITCH_SAVE_POTION_ID = "__WITCH_SAVE_POTION__";
+const WITCH_POISON_POTION_ID = "__WITCH_POISON_POTION__";
 const HUNTER_DECLINE_ID = "__HUNTER_DECLINE__";
 const KNIGHT_CANCEL_ID = "__KNIGHT_CANCEL__";
 
@@ -48,12 +51,9 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
   const roomId = publicState.roomId;
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const killedTonight = privateState.witch?.tonightKilledPlayerId ?? null;
-  // Whether the witch has clicked past the "use the antidote?" offer this night. Deliberately not
-  // derived from privateState in an effect keyed on phase/night -- publicState and privateState
-  // can arrive as separate updates, and snapshotting a derived step at the wrong moment would
-  // permanently skip the save offer for the rest of the night. A plain "did they decline" flag
-  // that only ever needs resetting to false each night avoids that race entirely.
-  const [hasDeclinedSave, setHasDeclinedSave] = useState(false);
+  // Which potion the witch has "armed" by clicking its icon beside her own card -- the next player
+  // card click applies it, and nothing is sent to the server until then.
+  const [witchArmedPotion, setWitchArmedPotion] = useState<"SAVE" | "POISON" | null>(null);
   // The knight's duel is available across several day phases at once, independent of whatever
   // else those phases offer (speaking turn, voting) -- a standing "declare duel" toggle rather
   // than one more phase-keyed branch below.
@@ -64,7 +64,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
 
   useEffect(() => {
     setPendingConfirm(null);
-    setHasDeclinedSave(false);
+    setWitchArmedPotion(null);
     setSeerPendingTargetId(null);
   }, [publicState.nightNumber]);
 
@@ -81,6 +81,8 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
   let cardBadges: Map<string, string> | undefined;
   let cardCaptions: Map<string, string> | undefined;
   let extraCard: PlayerCardTableExtraCard | null = null;
+  let leftSideAction: PlayerCardSideAction | undefined;
+  let rightSideAction: PlayerCardSideAction | undefined;
   let centerContent: string | null = null;
   let onSelect: ((id: string) => void) | undefined;
   let statusText: string | null = null;
@@ -225,66 +227,63 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
     const canAct = privateState.availableActions.includes("WITCH_ACTION");
     const hasAntidote = privateState.witch?.hasAntidote ?? false;
     const hasPoison = privateState.witch?.hasPoison ?? false;
-    const showSaveStep = canAct && Boolean(killedTonight) && hasAntidote && !hasDeclinedSave;
+    // "{name}被殺了" reads as background chatter when the name is her own -- calling it out as
+    // "妳" instead makes it register as something she needs to react to, not just narration.
+    const killedDescription = killedTonight
+      ? killedTonight === selfPlayerId
+        ? "妳"
+        : playerName(publicState, killedTonight)
+      : null;
 
     if (!canAct) {
       statusText = "已行動，等待天亮...";
-    } else if (showSaveStep && killedTonight) {
-      highlightIds = new Set([killedTonight]);
-      selectableIds = new Set([killedTonight]);
-      extraCard = { id: WITCH_DECLINE_ID, label: "不使用解藥" };
-      onSelect = (id) => {
-        if (id === WITCH_DECLINE_ID) {
-          setHasDeclinedSave(true);
-          return;
-        }
-        const targetName = playerName(publicState, id);
-        setPendingConfirm({
-          message: `確定要救 ${targetName} 嗎？`,
-          onConfirm: () => {
-            playCue("sfx.witch.heal");
-            socket.emit(CLIENT_EVENTS.WITCH_ACTION, { roomId, action: "SAVE", targetPlayerId: id });
-            setPendingConfirm(null);
-          },
-        });
-      };
-      const killedName = playerName(publicState, killedTonight);
-      statusText = `今晚 ${killedName} 被殺了，妳要使用解藥嗎？`;
-    } else if (hasPoison) {
-      selectableIds = new Set(alivePlayerIds);
+    } else if (!hasAntidote && !hasPoison) {
+      isSelfTurn = true;
       extraCard = { id: WITCH_DECLINE_ID, label: "結束行動" };
       onSelect = (id) => {
         if (id === WITCH_DECLINE_ID) {
-          setPendingConfirm({
-            message: "確定要放棄今晚行動嗎？",
-            onConfirm: () => {
-              socket.emit(CLIENT_EVENTS.WITCH_ACTION, { roomId, action: "SKIP" });
-              setPendingConfirm(null);
-            },
-          });
-          return;
+          socket.emit(CLIENT_EVENTS.WITCH_ACTION, { roomId, action: "SKIP" });
         }
-        const targetName = playerName(publicState, id);
-        setPendingConfirm({
-          message: `確定要毒殺 ${targetName} 嗎？`,
-          onConfirm: () => {
-            playCue("sfx.witch.poison");
-            socket.emit(CLIENT_EVENTS.WITCH_ACTION, { roomId, action: "POISON", targetPlayerId: id });
-            setPendingConfirm(null);
-          },
-        });
       };
-      // Who the wolves killed is only known here if she still has the antidote (declined earlier
-      // this same night) -- without one at all, the server never sends tonightKilledPlayerId, so
-      // don't imply anything about whether it was a peaceful night either.
-      statusText = hasAntidote
-        ? killedTonight
-          ? `${playerName(publicState, killedTonight)}被殺了，妳要使用毒藥嗎？`
-          : "今晚是平安夜，妳要使用毒藥嗎？"
-        : "妳要使用毒藥嗎？";
+      statusText = killedDescription
+        ? `${killedDescription}被殺了，藥水已經用完，沒有其他行動。`
+        : "藥水已經用完，沒有其他行動。";
     } else {
+      isSelfTurn = true;
+      // Both potions are offered side by side beside her own card -- clicking one "arms" it
+      // (enlarges + glows), and the next player card click applies that armed potion to them.
+      // Clicking an armed potion again disarms it without sending anything to the server.
+      const canSave = hasAntidote && Boolean(killedTonight);
+      leftSideAction = {
+        id: WITCH_SAVE_POTION_ID,
+        icon: <img src={withBase("/potions/antidote.png")} alt="解藥" className="game-potion-image" />,
+        label: "解藥",
+        armed: witchArmedPotion === "SAVE",
+        disabled: !canSave,
+      };
+      rightSideAction = {
+        id: WITCH_POISON_POTION_ID,
+        icon: <img src={withBase("/potions/poison.png")} alt="毒藥" className="game-potion-image" />,
+        label: "毒藥",
+        armed: witchArmedPotion === "POISON",
+        disabled: !hasPoison,
+      };
+      highlightIds = killedTonight ? new Set([killedTonight]) : undefined;
+      if (witchArmedPotion === "SAVE" && killedTonight) {
+        selectableIds = new Set([killedTonight]);
+      } else if (witchArmedPotion === "POISON") {
+        selectableIds = new Set(alivePlayerIds);
+      }
       extraCard = { id: WITCH_DECLINE_ID, label: "結束行動" };
       onSelect = (id) => {
+        if (id === WITCH_SAVE_POTION_ID) {
+          setWitchArmedPotion((prev) => (prev === "SAVE" ? null : "SAVE"));
+          return;
+        }
+        if (id === WITCH_POISON_POTION_ID) {
+          setWitchArmedPotion((prev) => (prev === "POISON" ? null : "POISON"));
+          return;
+        }
         if (id === WITCH_DECLINE_ID) {
           setPendingConfirm({
             message: "確定要結束今晚行動嗎？",
@@ -293,11 +292,47 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
               setPendingConfirm(null);
             },
           });
+          return;
+        }
+        const targetName = id === selfPlayerId ? "自己" : playerName(publicState, id);
+        if (witchArmedPotion === "SAVE") {
+          setPendingConfirm({
+            message: `確定要救 ${targetName} 嗎？`,
+            onConfirm: () => {
+              playCue("sfx.witch.heal");
+              socket.emit(CLIENT_EVENTS.WITCH_ACTION, { roomId, action: "SAVE", targetPlayerId: id });
+              setPendingConfirm(null);
+              setWitchArmedPotion(null);
+            },
+          });
+        } else if (witchArmedPotion === "POISON") {
+          setPendingConfirm({
+            message: `確定要毒殺 ${targetName} 嗎？`,
+            onConfirm: () => {
+              playCue("sfx.witch.poison");
+              socket.emit(CLIENT_EVENTS.WITCH_ACTION, { roomId, action: "POISON", targetPlayerId: id });
+              setPendingConfirm(null);
+              setWitchArmedPotion(null);
+            },
+          });
         }
       };
-      statusText = hasAntidote
-        ? `${killedTonight ? `${playerName(publicState, killedTonight)}被殺了` : "今晚是平安夜"}，藥水已經用完，沒有其他行動。`
-        : "藥水已經用完，沒有其他行動。";
+      if (witchArmedPotion) {
+        // Once a potion is armed, the prompt shifts from "pick a potion" to reminding her that
+        // the next step is clicking the target's card -- otherwise it's easy to leave the potion
+        // armed and glowing without realizing a second click is still needed.
+        const armedLabel = witchArmedPotion === "SAVE" ? "解藥" : "毒藥";
+        statusText = `已選擇${armedLabel}，請點選卡片決定要執行的對象`;
+      } else {
+        // Who the wolves killed is only known here if she still has the antidote -- without one at
+        // all, the server never sends tonightKilledPlayerId, so don't imply anything about whether
+        // it was a peaceful night either.
+        statusText = killedDescription
+          ? `${killedDescription}被殺死了，點選藥水後選擇你要執行的對象`
+          : hasAntidote
+            ? "今晚是平安夜，點選藥水後選擇你要執行的對象"
+            : "點選藥水後選擇你要執行的對象";
+      }
     }
   } else if (publicState.phase === "DAY_DISCUSSION" || publicState.phase === "DAY_TIEBREAK_DISCUSSION") {
     speakingIds = publicState.currentSpeakerPlayerId ? new Set([publicState.currentSpeakerPlayerId]) : undefined;
@@ -389,6 +424,8 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
         cardBadges={cardBadges}
         cardCaptions={cardCaptions}
         extraCard={extraCard}
+        leftSideAction={leftSideAction}
+        rightSideAction={rightSideAction}
         onSelect={onSelect}
         isSelfTurn={isSelfTurn}
       />
