@@ -11,7 +11,7 @@ import {
   startLastWordsTimer,
   startNightActionTimer,
 } from "./timers";
-import { resolveWerewolfKillTarget } from "./engine";
+import { autoSeerCheckIfMissing, resolveWerewolfKillTarget } from "./engine";
 
 export function aliveWerewolves(room: Room): Player[] {
   return [...room.players.values()].filter((p) => p.isAlive && p.role === "WEREWOLF");
@@ -179,6 +179,7 @@ export function runNightActionTimeout(room: Room): void {
       enterPhase(room, "NIGHT_SEER");
       break;
     case "NIGHT_SEER":
+      autoSeerCheckIfMissing(room);
       enterPhase(room, "NIGHT_WITCH");
       break;
     case "NIGHT_WITCH":

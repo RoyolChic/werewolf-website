@@ -70,15 +70,19 @@ describe("seer night phase", () => {
     expect(second.ok).toBe(false);
   });
 
-  it("skips the check and advances to NIGHT_WITCH once the 60s clock runs out", () => {
+  it("auto-picks a random target and advances to NIGHT_WITCH once the 60s clock runs out", () => {
     const { room } = setupNightReadyRoom(6);
     advanceToSeerPhase(room);
     expect(room.gameState.phase).toBe("NIGHT_SEER");
+    const seerId = playersWithRole(room, "SEER")[0];
 
     vi.advanceTimersByTime(NIGHT_ACTION_SECONDS * 1000 + 100);
 
     expect(room.gameState.phase).toBe("NIGHT_WITCH");
-    expect(room.gameState.seerChecks).toHaveLength(0);
+    expect(room.gameState.seerChecks).toHaveLength(1);
+    const autoCheck = room.gameState.seerChecks[0];
+    expect(autoCheck.seerPlayerId).toBe(seerId);
+    expect(autoCheck.targetPlayerId).not.toBe(seerId);
   });
 
   it("still runs the full timer when the seer is already dead, instead of skipping instantly", () => {

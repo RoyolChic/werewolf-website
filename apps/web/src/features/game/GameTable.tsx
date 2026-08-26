@@ -58,10 +58,14 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
   // else those phases offer (speaking turn, voting) -- a standing "declare duel" toggle rather
   // than one more phase-keyed branch below.
   const [knightDuelMode, setKnightDuelMode] = useState(false);
+  // Click-again-to-confirm target for the seer's check, mirroring the werewolves' kill vote --
+  // purely local since (unlike the wolves' shared vote) nobody else needs to see it.
+  const [seerPendingTargetId, setSeerPendingTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     setPendingConfirm(null);
     setHasDeclinedSave(false);
+    setSeerPendingTargetId(null);
   }, [publicState.nightNumber]);
 
   useEffect(() => {
@@ -203,16 +207,20 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
     // seerJustCheckedTonight above already covers the post-check state (and beyond, into
     // NIGHT_WITCH) -- reaching here at all means she hasn't checked yet tonight.
     selectableIds = new Set(alivePlayerIds.filter((id) => id !== selfPlayerId));
+    selectedIds = seerPendingTargetId ? new Set([seerPendingTargetId]) : undefined;
+    // Same click-again-to-lock-in pattern as the werewolves' kill vote: the first click just
+    // marks the pending target, clicking that same card again confirms it -- no popup modal.
     onSelect = (targetPlayerId) => {
-      const targetName = playerName(publicState, targetPlayerId);
-      setPendingConfirm({
-        message: `確定要查驗 ${targetName} 嗎？`,
-        onConfirm: () => {
-          socket.emit(CLIENT_EVENTS.SEER_CHECK, { roomId, targetPlayerId });
-          setPendingConfirm(null);
-        },
-      });
+      if (targetPlayerId === seerPendingTargetId) {
+        socket.emit(CLIENT_EVENTS.SEER_CHECK, { roomId, targetPlayerId });
+        setSeerPendingTargetId(null);
+        return;
+      }
+      setSeerPendingTargetId(targetPlayerId);
     };
+    statusText = seerPendingTargetId
+      ? `已選擇 ${playerName(publicState, seerPendingTargetId)}，點選兩下確認查驗對象`
+      : "點選兩下確認查驗對象";
   } else if (publicState.phase === "NIGHT_WITCH" && privateState.role === "WITCH") {
     const canAct = privateState.availableActions.includes("WITCH_ACTION");
     const hasAntidote = privateState.witch?.hasAntidote ?? false;

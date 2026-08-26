@@ -331,6 +331,32 @@ export function seerCheck(room: Room, playerId: string, targetPlayerId: string):
   return ok();
 }
 
+/**
+ * Called from the night-action timeout when the seer never acted in time -- rather than let the
+ * night pass with no check at all, pick a random living target for her so she still gets a
+ * result (and doesn't leave a gap in seerChecks history for the night).
+ */
+export function autoSeerCheckIfMissing(room: Room): void {
+  const seer = alivePlayers(room).find((p) => p.role === "SEER");
+  if (!seer) return;
+  const hasChecked = room.gameState.seerChecks.some(
+    (c) => c.night === room.gameState.nightNumber && c.seerPlayerId === seer.playerId,
+  );
+  if (hasChecked) return;
+  const candidateIds = alivePlayers(room)
+    .map((p) => p.playerId)
+    .filter((id) => id !== seer.playerId);
+  if (candidateIds.length === 0) return;
+  const targetId = pickRandom(candidateIds);
+  const target = room.players.get(targetId)!;
+  room.gameState.seerChecks.push({
+    night: room.gameState.nightNumber,
+    seerPlayerId: seer.playerId,
+    targetPlayerId: targetId,
+    faction: roleFaction(target.role!),
+  });
+}
+
 export type WitchActionKind = "SAVE" | "POISON" | "SKIP";
 
 export function witchAction(
