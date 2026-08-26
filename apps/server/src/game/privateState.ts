@@ -1,4 +1,4 @@
-import type { ActionType, PrivatePlayerState } from "@kill-wolf/shared";
+import type { ActionType, PrivatePlayerState, Role } from "@kill-wolf/shared";
 import type { Player, Room } from "../rooms/roomTypes";
 
 /** The knight's once-per-game duel can be declared any time during the day, independent of
@@ -172,6 +172,15 @@ export function buildPrivateState(room: Room, playerId: string): PrivatePlayerSt
         }
       : null;
 
+  const spectatorRevealedRoles =
+    !player.isAlive && player.deadViewMode === "FULL"
+      ? Object.fromEntries(
+          [...room.players.values()]
+            .filter((p): p is Player & { role: Role } => p.role !== null)
+            .map((p) => [p.playerId, p.role]),
+        )
+      : null;
+
   return {
     playerId: player.playerId,
     role: player.role,
@@ -184,6 +193,7 @@ export function buildPrivateState(room: Room, playerId: string): PrivatePlayerSt
     guard,
     knight,
     deadViewMode: player.deadViewMode,
+    spectatorRevealedRoles,
     availableActions: computeAvailableActions(room, player),
   };
 }

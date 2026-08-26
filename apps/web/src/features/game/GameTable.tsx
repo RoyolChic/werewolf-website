@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   CLIENT_EVENTS,
   FACTION_LABELS,
+  ROLE_LABELS,
   getNightActionSeconds,
   type PrivatePlayerState,
   type PublicRoomState,
@@ -87,12 +88,14 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
   let onSelect: ((id: string) => void) | undefined;
   let statusText: string | null = null;
   let isSelfTurn = false;
+  const selfAlive = publicState.players.find((p) => p.playerId === selfPlayerId)?.isAlive ?? false;
   const showNightTimer =
-    (publicState.phase === "NIGHT_GUARD" && privateState.role === "GUARD") ||
-    (publicState.phase === "NIGHT_WEREWOLF" && privateState.role === "WEREWOLF") ||
-    (publicState.phase === "NIGHT_SEER" && privateState.role === "SEER") ||
-    (publicState.phase === "NIGHT_WITCH" && privateState.role === "WITCH") ||
-    (publicState.phase === "HUNTER_SHOOT" && privateState.availableActions.includes("HUNTER_SHOOT"));
+    selfAlive &&
+    ((publicState.phase === "NIGHT_GUARD" && privateState.role === "GUARD") ||
+      (publicState.phase === "NIGHT_WEREWOLF" && privateState.role === "WEREWOLF") ||
+      (publicState.phase === "NIGHT_SEER" && privateState.role === "SEER") ||
+      (publicState.phase === "NIGHT_WITCH" && privateState.role === "WITCH") ||
+      (publicState.phase === "HUNTER_SHOOT" && privateState.availableActions.includes("HUNTER_SHOOT")));
 
   const alivePlayerIds = publicState.players.filter((p) => p.isAlive).map((p) => p.playerId);
 
@@ -152,7 +155,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
       });
     };
     statusText = "你已死亡，要開槍帶走一名玩家嗎？";
-  } else if (publicState.phase === "NIGHT_WEREWOLF" && privateState.role === "WEREWOLF") {
+  } else if (publicState.phase === "NIGHT_WEREWOLF" && privateState.role === "WEREWOLF" && selfAlive) {
     const isConfirmed = privateState.werewolfConfirmedPlayerIds?.includes(selfPlayerId) ?? false;
     const votes = privateState.werewolfVotes ?? {};
     const myTargetId = votes[selfPlayerId];
@@ -205,7 +208,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
         ? `已選擇 ${playerName(publicState, myTargetId)}，點選兩下確認襲擊對象`
         : "點選兩下確認襲擊對象";
     }
-  } else if (publicState.phase === "NIGHT_SEER" && privateState.role === "SEER") {
+  } else if (publicState.phase === "NIGHT_SEER" && privateState.role === "SEER" && selfAlive) {
     // seerJustCheckedTonight above already covers the post-check state (and beyond, into
     // NIGHT_WITCH) -- reaching here at all means she hasn't checked yet tonight.
     selectableIds = new Set(alivePlayerIds.filter((id) => id !== selfPlayerId));
@@ -397,6 +400,29 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
       });
     };
     statusText = "請選擇要決鬥的對象";
+  }
+
+  // A dead viewer never gets to act, no matter what the branches above computed for their old
+  // role -- and their deadViewMode picks what they get to see instead: nothing beyond ordinary
+  // phase status text ("HIDDEN"), or every player's actual role as a caption on their card ("FULL").
+  if (!selfAlive) {
+    selectableIds = undefined;
+    onSelect = undefined;
+    extraCard = null;
+    leftSideAction = undefined;
+    rightSideAction = undefined;
+    cardBadges = undefined;
+    isSelfTurn = false;
+    if (privateState.deadViewMode === "FULL" && privateState.spectatorRevealedRoles) {
+      cardCaptions = new Map(
+        Object.entries(privateState.spectatorRevealedRoles).map(([id, role]) => [id, ROLE_LABELS[role]]),
+      );
+      highlightIds = undefined;
+      statusText = "觀戰中，可看見所有人的身分";
+    } else {
+      cardCaptions = undefined;
+      statusText = "觀戰中...";
+    }
   }
 
   return (

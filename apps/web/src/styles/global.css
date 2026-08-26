@@ -301,6 +301,52 @@ h3 {
   cursor: not-allowed;
 }
 
+.dead-player-panel {
+  padding: 10px 14px;
+}
+
+.dead-player-panel-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.dead-player-panel-label {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.dead-view-toggle {
+  display: flex;
+  gap: 8px;
+  flex: 1 1 auto;
+}
+
+.dead-view-toggle-btn {
+  flex: 1 1 auto;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  min-height: 44px;
+  touch-action: manipulation;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dead-view-toggle-btn-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-ink);
+}
+
 .rules-explainer p {
   color: var(--color-text-muted);
   font-size: 14px;

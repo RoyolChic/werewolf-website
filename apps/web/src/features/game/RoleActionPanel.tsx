@@ -70,10 +70,15 @@ export function RoleActionPanel(props: RoleActionPanelProps) {
   if (!self) return null;
 
   // A hunter is already dead by the time HUNTER_SHOOT starts -- that's what makes them eligible
-  // to shoot -- so they still need the full interactive table, not the dead-player screen.
+  // to shoot -- so they still need the full interactive table, not the dead-player panel.
   const hasPendingAction = privateState.availableActions.length > 0;
   if (!self.isAlive && !hasPendingAction) {
-    return <DeadPlayerPanel publicState={publicState} privateState={privateState} roomId={roomId} />;
+    return (
+      <>
+        <DeadPlayerPanel privateState={privateState} roomId={roomId} />
+        <GameTable publicState={publicState} privateState={privateState} selfPlayerId={selfPlayerId} />
+      </>
+    );
   }
 
   return (
@@ -88,33 +93,46 @@ export function RoleActionPanel(props: RoleActionPanelProps) {
   );
 }
 
+/**
+ * A dead player keeps watching the live table below this (see GameTable's own !selfAlive branch)
+ * so they stay part of the room instead of staring at a blank "you died" screen -- this bar just
+ * lets them pick whether they want role identities spoiled while they spectate.
+ */
 function DeadPlayerPanel({
-  publicState,
   privateState,
   roomId,
 }: {
-  publicState: PublicRoomState;
   privateState: PrivatePlayerState;
   roomId: string;
 }) {
   const socket = useSocket();
+  const setMode = (mode: "HIDDEN" | "FULL") =>
+    socket.emit(CLIENT_EVENTS.SET_DEAD_VIEW_MODE, { roomId, mode });
+
   return (
-    <section className="card">
-      <p>你已死亡</p>
-      {privateState.role && (
-        <RoleInfoButton role={privateState.role} variantIndex={privateState.roleImageVariantIndex} />
-      )}
-      <label className="field">
-        <span>觀看模式</span>
-        <select
-          value={privateState.deadViewMode}
-          onChange={(e) => socket.emit(CLIENT_EVENTS.SET_DEAD_VIEW_MODE, { roomId, mode: e.target.value })}
-        >
-          <option value="HIDDEN">不看遊戲流程</option>
-          <option value="FULL">看完整遊戲流程</option>
-        </select>
-      </label>
-      {privateState.deadViewMode === "HIDDEN" && <p>等待遊戲結束...</p>}
+    <section className="card dead-player-panel">
+      <div className="dead-player-panel-row">
+        <span className="dead-player-panel-label">💀 你已死亡，正在觀戰</span>
+        <div className="dead-view-toggle" role="group" aria-label="觀戰模式">
+          <button
+            type="button"
+            className={`dead-view-toggle-btn${privateState.deadViewMode === "HIDDEN" ? " dead-view-toggle-btn-active" : ""}`}
+            onClick={() => setMode("HIDDEN")}
+          >
+            🙈 不知道身分
+          </button>
+          <button
+            type="button"
+            className={`dead-view-toggle-btn${privateState.deadViewMode === "FULL" ? " dead-view-toggle-btn-active" : ""}`}
+            onClick={() => setMode("FULL")}
+          >
+            🔍 查看所有身分
+          </button>
+        </div>
+        {privateState.role && (
+          <RoleInfoButton role={privateState.role} variantIndex={privateState.roleImageVariantIndex} />
+        )}
+      </div>
     </section>
   );
 }

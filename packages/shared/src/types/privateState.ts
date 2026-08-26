@@ -58,6 +58,9 @@ export interface PrivatePlayerState {
   guard: GuardPrivateInfo | null;
   knight: KnightPrivateInfo | null;
   deadViewMode: DeadViewMode;
+  /** Every player's role, populated only for a dead viewer whose deadViewMode is FULL -- lets a
+   * dead spectator see everyone's identity without leaking it to anyone still alive. */
+  spectatorRevealedRoles: Record<string, Role> | null;
   availableActions: ActionType[];
   reconnectToken?: string;
 }

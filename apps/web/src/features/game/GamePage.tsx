@@ -12,18 +12,6 @@ interface GamePageProps {
 
 export function GamePage({ publicState, privateState, selfPlayerId }: GamePageProps) {
   useGamePhaseAudio(publicState, privateState, selfPlayerId);
-  const self = publicState.players.find((p) => p.playerId === selfPlayerId);
-  const isDeadAndHidden = self && !self.isAlive && privateState.deadViewMode === "HIDDEN";
-
-  if (isDeadAndHidden) {
-    return (
-      <div className="page centered">
-        <p>你已死亡</p>
-        <RoleActionPanel publicState={publicState} privateState={privateState} selfPlayerId={selfPlayerId} />
-        <GameLogPanel publicState={publicState} privateState={privateState} selfPlayerId={selfPlayerId} />
-      </div>
-    );
-  }
 
   return (
     <div className="game-page">
