@@ -33,12 +33,6 @@ function playerName(publicState: PublicRoomState, playerId: string): string {
   return publicState.players.find((p) => p.playerId === playerId)?.name ?? playerId;
 }
 
-function seatNumberOf(publicState: PublicRoomState, playerId: string | null): number | null {
-  if (!playerId) return null;
-  const index = publicState.players.findIndex((p) => p.playerId === playerId);
-  return index === -1 ? null : index + 1;
-}
-
 type PendingConfirm = { message: string; onConfirm: () => void };
 
 /**
@@ -79,6 +73,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
   let selectableIds: Set<string> | undefined;
   let selectedIds: Set<string> | undefined;
   let highlightIds: Set<string> | undefined;
+  let speakingIds: Set<string> | undefined;
   let extraCard: PlayerCardTableExtraCard | null = null;
   let centerContent: string | null = null;
   let onSelect: ((id: string) => void) | undefined;
@@ -287,7 +282,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
         : "藥水已經用完，沒有其他行動。";
     }
   } else if (publicState.phase === "DAY_DISCUSSION" || publicState.phase === "DAY_TIEBREAK_DISCUSSION") {
-    centerContent = seatNumberOf(publicState, publicState.currentSpeakerPlayerId)?.toString() ?? null;
+    speakingIds = publicState.currentSpeakerPlayerId ? new Set([publicState.currentSpeakerPlayerId]) : undefined;
     const canSkip = privateState.availableActions.includes("SKIP_DAY_DISCUSSION");
     if (canSkip) {
       selectableIds = new Set([selfPlayerId]);
@@ -297,7 +292,7 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
       statusText = "輪到你發言了，說完後點自己的牌結束發言";
     }
   } else if (publicState.phase === "DAY_LAST_WORDS") {
-    centerContent = seatNumberOf(publicState, publicState.lastWordsPlayerId)?.toString() ?? null;
+    speakingIds = publicState.lastWordsPlayerId ? new Set([publicState.lastWordsPlayerId]) : undefined;
     const canEnd = privateState.availableActions.includes("END_LAST_WORDS");
     if (canEnd) {
       selectableIds = new Set([selfPlayerId]);
@@ -364,13 +359,14 @@ export function GameTable({ publicState, privateState, selfPlayerId }: GameTable
         selfRole={privateState.role}
         selfRoleVariantIndex={privateState.roleImageVariantIndex}
         centerContent={centerContent}
+        statusText={statusText}
         selectableIds={selectableIds}
         selectedIds={selectedIds}
         highlightIds={highlightIds}
+        speakingIds={speakingIds}
         extraCard={extraCard}
         onSelect={onSelect}
       />
-      {statusText && <p className="muted-text">{statusText}</p>}
       {pendingConfirm && (
         <ConfirmDialog
           message={pendingConfirm.message}

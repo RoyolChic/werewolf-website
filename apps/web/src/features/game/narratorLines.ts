@@ -1,6 +1,6 @@
 import { FACTION_LABELS, type PrivatePlayerState, type PublicRoomState } from "@kill-wolf/shared";
 
-function playerName(publicState: PublicRoomState, playerId: string | null | undefined): string | null {
+export function playerName(publicState: PublicRoomState, playerId: string | null | undefined): string | null {
   if (!playerId) return null;
   return publicState.players.find((p) => p.playerId === playerId)?.name ?? null;
 }
@@ -77,17 +77,6 @@ export function getNarratorLine(
         return `女巫請睜眼，${knownPeaceful}藥水已經用完，沒有其他行動`;
       }
       return "天黑請閉眼";
-    }
-    case "DAY_ANNOUNCEMENT":
-    case "DAY_DISCUSSION": {
-      const deaths = publicState.lastNightDeathPlayerIds;
-      const deathText =
-        deaths && deaths.length > 0
-          ? `昨晚${deaths.map((id) => playerName(publicState, id) ?? id).join("、")}被殺了`
-          : "昨晚是平安夜";
-      const firstSpeakerId = publicState.discussionSpeakingOrder[0];
-      const firstSpeakerName = playerName(publicState, firstSpeakerId);
-      return firstSpeakerName ? `天亮了，${deathText}，這回合首先發言的是${firstSpeakerName}` : `天亮了，${deathText}`;
     }
     case "DAY_TIEBREAK_DISCUSSION": {
       const tiedNames = publicState.discussionSpeakingOrder.map((id) => playerName(publicState, id) ?? id);

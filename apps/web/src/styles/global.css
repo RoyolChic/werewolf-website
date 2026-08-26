@@ -72,6 +72,22 @@ h3 {
   gap: 12px;
 }
 
+/* .room-page (stacked alongside .page on RoomPage / DevMultiViewPage's wrapper around every
+   in-room phase, not just the game itself) is what actually reaches the viewport edge, so the
+   80%-of-screen sizing belongs here -- putting it on .game-page instead would compute against
+   .page's own 560px cap that already wraps it, not the viewport. */
+.room-page {
+  width: 80%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+@media (max-width: 700px) {
+  .room-page {
+    width: 96%;
+  }
+}
+
 .centered {
   align-items: center;
   justify-content: center;
@@ -526,6 +542,31 @@ h3 {
   color: var(--color-text);
 }
 
+.speaker-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, oklch(35% 0.06 45 / 0.35), transparent);
+  border-left: 3px solid var(--color-primary);
+}
+
+.speaker-banner-death {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.speaker-banner-speaker {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-primary-2);
+  text-shadow: 0 0 14px oklch(72% 0.18 45 / 0.4);
+}
+
 .narrator-line {
   font-family: var(--font-body);
   font-size: 16px;
@@ -663,6 +704,11 @@ h3 {
   justify-content: center;
 }
 
+.game-table-status {
+  margin: 4px 0 8px;
+  text-align: center;
+}
+
 .game-card {
   flex: 0 0 auto;
   width: 72px;
@@ -670,6 +716,7 @@ h3 {
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  transition: transform 0.25s ease;
 }
 
 .game-card-clickable {
@@ -689,6 +736,7 @@ h3 {
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
+  transition: box-shadow 0.25s ease, outline-color 0.25s ease;
 }
 
 .game-card-clickable .game-card-face {
@@ -707,6 +755,27 @@ h3 {
 
 .game-card-dead .game-card-face {
   filter: grayscale(0.6) brightness(0.55);
+}
+
+.game-card-speaking {
+  transform: scale(1.15);
+  position: relative;
+  z-index: 2;
+}
+
+.game-card-speaking .game-card-face {
+  outline: 3px solid var(--color-primary-2);
+  animation: game-card-speaking-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes game-card-speaking-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--color-primary-2), 0 0 14px 4px oklch(81% 0.14 68 / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--color-primary-2), 0 0 26px 8px oklch(81% 0.14 68 / 0.85);
+  }
 }
 
 .game-card-seat {

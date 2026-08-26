@@ -15,9 +15,13 @@ interface PlayerCardTableProps {
   selfRole: Role | null;
   selfRoleVariantIndex: number;
   centerContent?: ReactNode;
+  /** Hint text (e.g. "your turn to speak") shown between the others' row and the self row. */
+  statusText?: string | null;
   selectableIds?: ReadonlySet<string>;
   selectedIds?: ReadonlySet<string>;
   highlightIds?: ReadonlySet<string>;
+  /** Players who currently hold the floor -- rendered larger with a glowing border. */
+  speakingIds?: ReadonlySet<string>;
   extraCard?: PlayerCardTableExtraCard | null;
   onSelect?: (id: string) => void;
 }
@@ -35,9 +39,11 @@ export function PlayerCardTable({
   selfRole,
   selfRoleVariantIndex,
   centerContent,
+  statusText,
   selectableIds,
   selectedIds,
   highlightIds,
+  speakingIds,
   extraCard,
   onSelect,
 }: PlayerCardTableProps) {
@@ -51,6 +57,7 @@ export function PlayerCardTable({
       clickable ? "game-card-clickable" : "",
       selectedIds?.has(playerId) ? "game-card-selected" : "",
       highlightIds?.has(playerId) ? "game-card-highlight" : "",
+      speakingIds?.has(playerId) ? "game-card-speaking" : "",
     ]
       .filter(Boolean)
       .join(" ");
@@ -95,6 +102,7 @@ export function PlayerCardTable({
         )}
       </div>
       {centerContent != null && <div className="game-table-center">{centerContent}</div>}
+      {statusText && <p className="muted-text game-table-status">{statusText}</p>}
       {self && (
         <div className="game-table-self-row">
           <div
